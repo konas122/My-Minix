@@ -1,3 +1,11 @@
 # Tiny-Unix
 
-comming soon...
+## Environment
+
+```
+x86_64 GNU/Linux
+gcc version 12.3.0
+GNU ld 2.41
+NASM version 2.16.01
+Bochs x86 Emulator 2.6.8
+```
