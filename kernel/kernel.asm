@@ -8,7 +8,7 @@ extern	exception_handler
 extern	spurious_irq
 extern	disp_str
 extern	delay
-extern  clock_handler
+extern	irq_table
 
 ; 导入全局变量
 extern	gdt_ptr
@@ -17,6 +17,7 @@ extern	p_proc_ready
 extern	tss
 extern	disp_pos
 extern	k_reenter
+extern  sys_call_table
 
 bits 32
 
@@ -64,6 +65,7 @@ global  hwint12
 global  hwint13
 global  hwint14
 global  hwint15
+global  sys_call
 
 
 ; ---------------------------------
@@ -180,105 +182,63 @@ exception:
 ; 中断和异常 -- 硬件中断
 ; ---------------------------------
 %macro  hwint_master    1
-        push    %1
-        call    spurious_irq
-        add     esp, 4
-        hlt
+	call	save
+    
+    ; 不允许再次发生时钟中断
+	in	al, INT_M_CTLMASK
+	or	al, (1 << %1)		
+	out	INT_M_CTLMASK, al	
+
+    ; 置EOI位 (End Of Interrupt)
+	mov	al, EOI	
+	out	INT_M_CTL, al	
+
+	; CPU在响应中断的过程中会自动关中断，这句之后就允许响应新的中断
+    sti
+    ; 中断处理过程
+	push	%1			
+	call	[irq_table + 4 * %1]
+	pop	ecx		
+	cli
+
+    ; 又允许当前中断发生
+	in	al, INT_M_CTLMASK	
+	and	al, ~(1 << %1)		
+	out	INT_M_CTLMASK, al
+	ret
 %endmacro
 
 ALIGN   16
-hwint00:                    ; Interrupt routine for irq 0 (the clock).
-    sub esp, 4              ; 这个跳过的4字节是 retaddr
-    pushad
-    push	ds
-	push	es	
-	push	fs
-	push	gs
-	mov	dx, ss              ; ss is kernel data segment
-    mov	ds, dx              ; load rest of kernel segments
-	mov	es, dx              ; kernel does not use fs, gs
-
-    inc byte [gs:0]         ; 改变屏幕第 0 行, 第 0 列的字符
-
-    ; reenable master 8259
-    mov al, EOI             
-    out INT_M_CTL, al      
-
-    inc	dword [k_reenter]
-	cmp	dword [k_reenter], 0
-    jne .1                  ; 重入则跳到.1，通常情况下是顺序执行
-	; jne	.re_enter
-
-    mov	esp, StackTop		; 切到内核栈
-
-    push    .restart_v2
-    jmp .2
-
-.1: ; 中断重入
-    push    .restart_reenter_v2
-.2: ; 没有中断重入
-
-	sti
-
-    push    0
-    call    clock_handler
-    add	esp, 4
-
-    ; push	1
- 	; call	delay
- 	; add	esp, 4
-    cli
-
-    ret                     ; 重入时跳到.restart_reenter_v2，通常情况下是到.restart_v2
-
-.restart_v2:
-    mov esp, [p_proc_ready] ; 离开内核栈
-    lldt [esp + P_LDT_SEL]
-
-    ; 设置 tss.esp0 的值，准备下一次进程被中断时使用
-    lea eax, [esp + P_STACKTOP]
-    mov dword [tss + TSS3_S_SP0], eax
-
-; .re_enter:                
-.restart_reenter_v2:        ; 如果(k_reenter != 0)，会跳到此处
-    dec dword [k_reenter]
-    pop     gs
-    pop     fs
-    pop     es
-    pop     ds
-    popad
-    add	esp, 4
-    iret
-
-
+hwint00:                ; Interrupt routine for irq 0 (the clock).
+    hwint_master    0
 
 ALIGN   16
 hwint01:                ; Interrupt routine for irq 1 (keyboard)
-        hwint_master    1
+    hwint_master    1
 
 ALIGN   16
 hwint02:                ; Interrupt routine for irq 2 (cascade!)
-        hwint_master    2
+    hwint_master    2
 
 ALIGN   16
 hwint03:                ; Interrupt routine for irq 3 (second serial)
-        hwint_master    3
+    hwint_master    3
 
 ALIGN   16
 hwint04:                ; Interrupt routine for irq 4 (first serial)
-        hwint_master    4
+    hwint_master    4
 
 ALIGN   16
 hwint05:                ; Interrupt routine for irq 5 (XT winchester)
-        hwint_master    5
+    hwint_master    5
 
 ALIGN   16
 hwint06:                ; Interrupt routine for irq 6 (floppy)
-        hwint_master    6
+    hwint_master    6
 
 ALIGN   16
 hwint07:                ; Interrupt routine for irq 7 (printer)
-        hwint_master    7
+    hwint_master    7
 
 ; ---------------------------------
 %macro  hwint_slave     1
@@ -320,7 +280,34 @@ ALIGN   16
 hwint15:                ; Interrupt routine for irq 15
         hwint_slave     15
 
-    
+
+
+; save
+save:
+    pushad
+    push	ds
+	push	es	
+	push	fs
+	push	gs
+	mov	dx, ss              ; ss is kernel data segment
+    mov	ds, dx              ; load rest of kernel segments
+	mov	es, dx              ; kernel does not use fs, gs
+
+    mov esi, esp            ; esi = 进程表起始地址
+
+    inc	dword [k_reenter]
+	cmp	dword [k_reenter], 0
+    jne .1                  ; 重入则跳到.1，通常情况下是顺序执行
+
+    mov	esp, StackTop		; 切到内核栈
+    push    restart         ; 表示进程切换后重新开始执行的地址
+    jmp [esi + RETADR - P_STACKBASE]
+.1:                         ; 已经在内核栈，不需要再切换
+    push    restart_reenter ; 表示进程切换后重新开始执行的地址
+    jmp [esi + RETADR - P_STACKBASE]
+
+
+
 ; restart
 restart:
     mov esp, [p_proc_ready]
@@ -329,11 +316,23 @@ restart:
     lea eax, [esp + P_STACKTOP]
     mov dword [tss + TSS3_S_SP0], eax
 
+restart_reenter:
+    dec dword [k_reenter]
     pop gs
     pop fs
     pop es
     pop ds
     popad
     add esp, 4
-    iret
+    iret                    ; 从中断返回，恢复被中断时的状态
 
+
+sys_call:
+    call save
+    
+    sti
+    call [sys_call_table + eax + 4]
+    mov [esi + EAXREG - P_STACKBASE], eax
+    cli
+
+    ret
