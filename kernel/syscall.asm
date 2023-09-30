@@ -4,7 +4,8 @@ _NR_get_ticks       equ 0   ; 要跟 global.c 中 sys_call_table 的定义相对
 INT_VECTOR_SYS_CALL equ 0x90
 
 
-global  _NR_get_ticks
+; global  _NR_get_ticks
+global  get_ticks
 
 bits 32
 [SECTION .text]

@@ -45,11 +45,19 @@ PUBLIC int kernel_main()
         p_task++;
         selector_ldt += 1 << 3;
     }
+    proc_table[0].ticks = proc_table[0].priority = 15;
+    proc_table[1].ticks = proc_table[1].priority = 5;
+    proc_table[2].ticks = proc_table[2].priority = 3;
 
     k_reenter = 0;
     ticks = 0;
 
     p_proc_ready = proc_table;
+
+    // 初始化 8253 PIT
+    out_byte(TIMER_MODE, RATE_GENERATOR);
+    out_byte(TIMER0, (u8)(TIMER_FREQ / HZ));
+    out_byte(TIMER0, (u8)((TIMER_FREQ / HZ) >> 8));
 
     // 设定时钟中断处理程序
     put_irq_handler(CLOCK_IRQ, clock_handler);
@@ -61,34 +69,36 @@ PUBLIC int kernel_main()
 }
 
 
-void TestA() {
-    int i = 0;
-    while (1) {
-        disp_str("A");
-		disp_int(sys_get_ticks());
-		disp_str(".");
-		delay(1);
-    }
+void TestA()
+{
+	int i = 0;
+	while (1) {
+        // disp_int(sys_get_ticks());
+		disp_color_str("A.", BRIGHT | MAKE_COLOR(BLACK, RED));
+		// disp_int(get_ticks());
+		milli_delay(10);
+	}
 }
 
 
-void TestB() {
-    int i = 0x1000;
-    while(1) {
-        disp_str("B");
-		disp_int(i++);
-		disp_str(".");
-		delay(1);
-    }
+void TestB()
+{
+	int i = 0x1000;
+	while(1){
+        // disp_int(sys_get_ticks());
+		disp_color_str("B.", BRIGHT | MAKE_COLOR(BLACK, GREEN));
+		// disp_int(get_ticks());
+		milli_delay(10);
+	}
 }
 
-
-void TestC() {
-    int i = 0x2000;
-    while(1) {
-        disp_str("C");
-        disp_int(i++);
-		disp_str(".");
-		delay(1);
-    }
+void TestC()
+{
+	int i = 0x2000;
+	while(1){
+        // disp_int(sys_get_ticks());
+		disp_color_str("C.", BRIGHT | MAKE_COLOR(WHITE, BLUE));
+		// disp_int(get_ticks());
+		milli_delay(10);
+	}
 }

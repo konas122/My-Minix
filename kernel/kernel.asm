@@ -5,6 +5,7 @@
 extern	cstart
 extern	kernel_main
 extern	exception_handler
+extern	clock_handler
 extern	spurious_irq
 extern	disp_str
 extern	delay
@@ -313,6 +314,7 @@ restart:
     mov esp, [p_proc_ready]
     lldt    [esp + P_LDT_SEL]
 
+    ; 保存 ring0 的堆栈信息，为下一次 ring1->ring0 做准备
     lea eax, [esp + P_STACKTOP]
     mov dword [tss + TSS3_S_SP0], eax
 
@@ -331,7 +333,7 @@ sys_call:
     call save
     
     sti
-    call [sys_call_table + eax + 4]
+    call [sys_call_table + eax * 4]
     mov [esi + EAXREG - P_STACKBASE], eax
     cli
 

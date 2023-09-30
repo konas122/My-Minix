@@ -26,7 +26,11 @@ typedef struct s_proc {
 	u16				ldt_sel;		    /* selector in gdt giving ldt base and limit*/
 	DESCRIPTOR		ldts[LDT_SIZE];	    /* local descriptors for code and data */
 								        /* 2 is LDT_SIZE - avoid include protect.h */
-	u32				pid;			    /* process id passed in from MM */
+
+    int             ticks;
+    int             priority;
+
+    u32				pid;			    /* process id passed in from MM */
 	char			p_name[16];		    /* name of the process */
 } PROCESS;
 
