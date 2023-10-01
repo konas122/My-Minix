@@ -1,57 +1,59 @@
-# Entry point of KonasUnix
-# It must have the same value with 'KernelEntryPointPhyAddr' in `load.inc`
-ENTRYPOINT = 0x30400
+#########################
+# Makefile for Orange'S #
+#########################
+
+# Entry point of Orange'S
+# It must have the same value with 'KernelEntryPointPhyAddr' in load.inc!
+ENTRYPOINT	= 0x30400
 
 # Offset of entry point in kernel file
 # It depends on ENTRYPOINT
-ENTRYOFFSET = 0x400
+ENTRYOFFSET	=   0x400
 
-
-# flags
-ASM = nasm
-DASM = ndisasm
-CC = gcc
-LD = ld
-ASMBFLAGS 	= -I boot/include/
-ASMKFLAGS 	= -I include/ -f elf
+# Programs, flags, etc.
+ASM		= nasm
+DASM	= ndisasm
+CC		= gcc
+LD		= ld
+ASMBFLAGS	= -I boot/include/
+ASMKFLAGS	= -I include/ -f elf
 CFLAGS		= -I include/ -c -fno-builtin -m32
-LDFLAGS 	= -s -Ttext $(ENTRYPOINT) -m elf_i386
-DASMFLAGS 	= -u -o $(ENTRYPOINT) -e $(ENTRYOFFSET)
+LDFLAGS		= -s -Ttext $(ENTRYPOINT) -m elf_i386
+DASMFLAGS	= -u -o $(ENTRYPOINT) -e $(ENTRYOFFSET)
 
-
-# This program
-KONIXBOOT	= boot/boot.bin boot/loader.bin
-KONIXKERNEL	= kernel.bin
-OBJS		= kernel/kernel.o kernel/syscall.o kernel/start.o kernel/main.o kernel/clock.o \
-			kernel/i8259.o kernel/global.o kernel/protect.o kernel/proc.o \
-			lib/kliba.o lib/klib.o lib/string.o 
-DASMOUTPUT	= kernel_bin.asm
-
+# This Program
+ORANGESBOOT	= boot/boot.bin boot/loader.bin
+ORANGESKERNEL	= kernel.bin
+OBJS		= kernel/kernel.o kernel/syscall.o kernel/start.o kernel/main.o\
+			kernel/clock.o kernel/keyboard.o kernel/tty.o\
+			kernel/i8259.o kernel/global.o kernel/protect.o kernel/proc.o\
+			lib/kliba.o lib/klib.o lib/string.o
+DASMOUTPUT	= kernel.bin.asm
 
 # All Phony Targets
-.PHONY : everything final image clean realclean disasm all building
+.PHONY : everything final image clean realclean disasm all buildimg
 
 # Default starting position
-everything : $(KONIXBOOT) $(KONIXKERNEL)
+nop :
+	@echo "why not \`make image' huh? :)"
+
+everything : $(ORANGESBOOT) $(ORANGESKERNEL)
 
 all : realclean everything
 
-final : all clean
+image : realclean everything clean buildimg
 
-image : final building
-
-clean : 
+clean :
 	rm -f $(OBJS)
 
 realclean :
-	rm -rf $(OBJS) $(KONIXBOOT) $(KONIXKERNEL)
+	rm -f $(OBJS) $(ORANGESBOOT) $(ORANGESKERNEL)
 
-disasm:
-	$(DASM) $(DASMFLAGS) $(KONIXKERNEL) > $(DASMOUTPUT)
-
+disasm :
+	$(DASM) $(DASMFLAGS) $(ORANGESKERNEL) > $(DASMOUTPUT)
 
 # We assume that "a.img" exists in current folder
-building : 
+buildimg :
 	dd if=boot/boot.bin of=a.img bs=512 count=1 conv=notrunc
 	sudo mount -o loop a.img /mnt/floppy/
 	sudo cp -fv boot/loader.bin /mnt/floppy/
@@ -61,12 +63,11 @@ building :
 boot/boot.bin : boot/boot.asm boot/include/load.inc boot/include/fat12hdr.inc
 	$(ASM) $(ASMBFLAGS) -o $@ $<
 
-boot/loader.bin : boot/loader.asm boot/include/load.inc \
-			boot/include/fat12hdr.inc boot/include/pm.inc
+boot/loader.bin : boot/loader.asm boot/include/load.inc boot/include/fat12hdr.inc boot/include/pm.inc
 	$(ASM) $(ASMBFLAGS) -o $@ $<
 
-$(KONIXKERNEL) : $(OBJS)
-	$(LD) $(LDFLAGS) -o $(KONIXKERNEL) $(OBJS)
+$(ORANGESKERNEL) : $(OBJS)
+	$(LD) $(LDFLAGS) -o $(ORANGESKERNEL) $(OBJS)
 
 kernel/kernel.o : kernel/kernel.asm include/sconst.inc
 	$(ASM) $(ASMKFLAGS) -o $@ $<
@@ -85,6 +86,12 @@ kernel/main.o: kernel/main.c include/type.h include/const.h include/protect.h in
 kernel/clock.o: kernel/clock.c
 	$(CC) $(CFLAGS) -o $@ $<
 
+kernel/keyboard.o: kernel/keyboard.c
+	$(CC) $(CFLAGS) -o $@ $<
+
+kernel/tty.o: kernel/tty.c
+	$(CC) $(CFLAGS) -o $@ $<
+
 kernel/i8259.o: kernel/i8259.c include/type.h include/const.h include/protect.h include/proto.h
 	$(CC) $(CFLAGS) -o $@ $<
 
@@ -92,12 +99,11 @@ kernel/global.o: kernel/global.c include/type.h include/const.h include/protect.
 			include/global.h include/proto.h
 	$(CC) $(CFLAGS) -o $@ $<
 
-kernel/proc.o: kernel/proc.c include/type.h include/const.h include/protect.h include/proc.h \
-			include/global.h include/proto.h
-	$(CC) $(CFLAGS) -o $@ $<
-
 kernel/protect.o: kernel/protect.c include/type.h include/const.h include/protect.h include/proc.h include/proto.h \
 			include/global.h
+	$(CC) $(CFLAGS) -o $@ $<
+
+kernel/proc.o: kernel/proc.c
 	$(CC) $(CFLAGS) -o $@ $<
 
 lib/klib.o: lib/klib.c include/type.h include/const.h include/protect.h include/string.h include/proc.h include/proto.h \
