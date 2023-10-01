@@ -14,3 +14,13 @@ PUBLIC void task_tty() {
         keyboard_read();
     }
 }
+
+
+PUBLIC void in_process(u32 key) {
+    char output[2] = {'\0', '\0'};
+
+    if (!(key & FLAG_EXT)) {
+        output[0] = key & 0xFF;
+        disp_str(output);
+    }
+}
