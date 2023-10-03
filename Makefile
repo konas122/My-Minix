@@ -1,7 +1,3 @@
-#########################
-# Makefile for Orange'S #
-#########################
-
 # Entry point of Orange'S
 # It must have the same value with 'KernelEntryPointPhyAddr' in load.inc!
 ENTRYPOINT	= 0x30400
@@ -25,7 +21,7 @@ DASMFLAGS	= -u -o $(ENTRYPOINT) -e $(ENTRYOFFSET)
 ORANGESBOOT	= boot/boot.bin boot/loader.bin
 ORANGESKERNEL	= kernel.bin
 OBJS		= kernel/kernel.o kernel/syscall.o kernel/start.o kernel/main.o\
-			kernel/clock.o kernel/keyboard.o kernel/tty.o\
+			kernel/clock.o kernel/keyboard.o kernel/tty.o kernel/console.o\
 			kernel/i8259.o kernel/global.o kernel/protect.o kernel/proc.o\
 			lib/kliba.o lib/klib.o lib/string.o
 DASMOUTPUT	= kernel.bin.asm
@@ -90,6 +86,9 @@ kernel/keyboard.o: kernel/keyboard.c
 	$(CC) $(CFLAGS) -o $@ $<
 
 kernel/tty.o: kernel/tty.c
+	$(CC) $(CFLAGS) -o $@ $<
+
+kernel/console.o: kernel/console.c
 	$(CC) $(CFLAGS) -o $@ $<
 
 kernel/i8259.o: kernel/i8259.c include/type.h include/const.h include/protect.h include/proto.h

@@ -95,6 +95,10 @@
 #define	V_MEM_SIZE	0x8000	    /* 32K: B8000H -> BFFFFH */
 
 
+/* TTY */
+#define NR_CONSOLES     3       /* consoles */
+
+
 /* system call */
 #define NR_SYS_CALL 1
 

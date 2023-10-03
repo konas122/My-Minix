@@ -12,6 +12,8 @@ EXTERN	GATE		idt[IDT_SIZE];
 EXTERN	u32		k_reenter;
 EXTERN  int     ticks;
 
+EXTERN	int		nr_current_console;
+
 EXTERN	TSS		tss;
 EXTERN	PROCESS*	p_proc_ready;
 
@@ -21,3 +23,6 @@ extern	char		task_stack[];
 extern  TASK        task_table[];
 
 extern	irq_handler	irq_table[];
+
+extern	TTY		    tty_table[];
+extern  CONSOLE     console_table[];

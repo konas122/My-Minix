@@ -1,10 +1,12 @@
 #include "type.h"
 #include "const.h"
 #include "protect.h"
-#include "proto.h"
 #include "string.h"
 #include "proc.h"
+#include "tty.h"
+#include "console.h"
 #include "global.h"
+#include "proto.h"
 
 #include "keyboard.h"
 #include "keymap.h"
@@ -56,7 +58,7 @@ PUBLIC void init_keyboard() {
 }
 
 
-PUBLIC void keyboard_read() {
+PUBLIC void keyboard_read(TTY* p_tty) {
     u8      scan_code;
     char    output[2];
     int     make;               // True: make; False: break
@@ -162,7 +164,7 @@ PUBLIC void keyboard_read() {
                 key |= ALT_L    ? FLAG_ALT_L    :   0;
                 key |= ALT_R    ? FLAG_ALT_R    :   0;
 
-                in_process(key);
+                in_process(p_tty, key);
             }
         }
     }
