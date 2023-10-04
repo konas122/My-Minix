@@ -2,6 +2,8 @@
 
 _NR_get_ticks       equ 0   ; 要跟 global.c 中 sys_call_table 的定义相对应
 _NR_write           equ 1
+
+; 这里我们把系统调用中断号设为 0x90，它只要不和原来的中断号重复即可（Linux相应的中断号为 0x80）
 INT_VECTOR_SYS_CALL equ 0x90
 
 
