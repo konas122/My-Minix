@@ -32,8 +32,9 @@ typedef struct s_proc {
 
     u32				pid;			    /* process id passed in from MM */
 	char			p_name[16];		    /* name of the process */
-} PROCESS;
 
+    int nr_tty;
+} PROCESS;
 
 typedef struct s_task {
     task_f      initial_eip;
@@ -42,8 +43,9 @@ typedef struct s_task {
 } TASK;
 
 
-/* Number of tasks */
-#define NR_TASKS	3
+/* Number of tasks & procs */
+#define NR_TASKS	1
+#define NR_PROCS	3
 
 /* stacks of tasks */
 #define STACK_SIZE_TTY		0x8000

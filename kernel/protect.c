@@ -103,10 +103,10 @@ PUBLIC void init_prot()
     // 填充 GDT 中进程的 LDT 的描述符
     PROCESS *p_proc = proc_table;
     u16 selector_ldt = INDEX_LDT_FIRST << 3;
-    for (int i = 0; i < NR_TASKS; i++) {
+    for (int i = 0; i < NR_TASKS + NR_PROCS; i++) {
         init_descriptor(
             &gdt[selector_ldt >> 3],
-            vir2phys(seg2phys(SELECTOR_KERNEL_DS), proc_table[0].ldts),
+            vir2phys(seg2phys(SELECTOR_KERNEL_DS), proc_table[i].ldts),
             LDT_SIZE * sizeof(DESCRIPTOR) - 1,
             DA_LDT);
         p_proc++;
@@ -115,6 +115,7 @@ PUBLIC void init_prot()
 }
 
 
+// 初始化 386 中断门
 PRIVATE void init_idt_desc(unsigned char vector, u8 desc_type,
 			  int_handler handler, unsigned char privilege)
 {
@@ -126,6 +127,7 @@ PRIVATE void init_idt_desc(unsigned char vector, u8 desc_type,
     p_gate->attr        = desc_type | (privilege << 5);
 	p_gate->offset_high	= (base >> 16) & 0xFFFF;
 }
+
 
 // 初始化段描述符
 PRIVATE void init_descriptor(DESCRIPTOR * p_desc, u32 base, u32 limit, u16 attribute)
@@ -153,7 +155,7 @@ PUBLIC void exception_handler(int vec_no,int err_code,int eip,int cs,int eflags)
     int i;
 	int text_color = 0x74;      /* 灰底红字 */
 
-	char * err_msg[] = {
+	char * err_msg[][64] = {
             "#DE Divide Error",
 			"#DB RESERVED",
 		    "--  NMI Interrupt",

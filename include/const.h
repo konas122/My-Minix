@@ -82,6 +82,8 @@
 #define KB_CMD		0x64	    /* I/O port for keyboard command */
 					            // Read : Read Status Register
 					            // Write: Write Input Buffer(8042 Command)
+#define LED_CODE	0xED
+#define KB_ACK		0xFA                                
 
 
 /* VGA */
@@ -100,6 +102,6 @@
 
 
 /* system call */
-#define NR_SYS_CALL 1
+#define NR_SYS_CALL 2
 
 #endif

@@ -63,17 +63,12 @@ PUBLIC void in_process(TTY* p_tty, u32 key) {
                 break;
             case UP:
                 if ((key & FLAG_SHIFT_L) || (key & FLAG_SHIFT_R)) {
-                        disable_int();
-                        out_byte(CRTC_ADDR_REG, START_ADDR_H);
-                        out_byte(CRTC_DATA_REG, ((80 * 15) >> 8) & 0xFF);
-                        out_byte(CRTC_ADDR_REG, START_ADDR_L);
-                        out_byte(CRTC_DATA_REG, (80 * 15) & 0xFF);
-                        enable_int();
+				    scroll_screen(p_tty->p_console, SCR_DN);
                 }
-                break;
+			    break;
             case DOWN:
                 if ((key & FLAG_SHIFT_L) || (key & FLAG_SHIFT_R)) {
-				    /* Shift+Down, do nothing */
+                    scroll_screen(p_tty->p_console, SCR_UP);
                 }
                 break;
 
@@ -135,4 +130,21 @@ PRIVATE void put_key(TTY* p_tty, u32 key) {
 		}
 		p_tty->inbuf_count++;
     }
+}
+
+
+PUBLIC void tty_write(TTY* p_tty, char* buf, int len) {
+    char *p = buf;
+    int i = len;
+
+    while (i) {
+        out_char(p_tty->p_console, *p++);
+        i--;
+    }
+}
+
+
+PUBLIC int sys_write(char* buf, int len, PROCESS* p_proc) {
+    tty_write(&tty_table[p_proc->nr_tty], buf, len);
+    return 0;
 }

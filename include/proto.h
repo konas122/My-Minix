@@ -23,10 +23,9 @@ void TestA();
 void TestB();
 void TestC();
 
-PUBLIC void	init_8259A();
-
 
 /* i8259.c */
+PUBLIC void	init_8259A();
 PUBLIC void put_irq_handler(int irq, irq_handler handler);
 PUBLIC void spurious_irq(int irq);
 
@@ -34,15 +33,34 @@ PUBLIC void spurious_irq(int irq);
 PUBLIC void clock_handler(int irq);
 PUBLIC void init_clock();
 
+
 /* keyboard.c */
 PUBLIC void init_keyboard();
 
 /* tty.c */
 PUBLIC void task_tty();
 
-/* proc.c */
-PUBLIC  int     sys_get_ticks();        /* sys_call */
+/* console.c */
+PUBLIC void out_char(CONSOLE* p_con, char ch);
+PUBLIC void scroll_screen(CONSOLE* p_con, int direction);
 
+
+/* printf.c */
+PUBLIC  int     printf(const char *fmt, ...);
+
+/* vsprintf.c */
+PUBLIC  int     vsprintf(char *buf, const char *fmt, va_list args);
+
+
+/* 以下是系统调用相关 */
+
+/* 系统调用 - 系统级 */
+/* proc.c */
+PUBLIC  int     sys_get_ticks();
+PUBLIC  int     sys_write(char* buf, int len, PROCESS* p_proc);
 /* syscall.asm */
 PUBLIC  void    sys_call();             /* int_handler */
+
+/* 系统调用 - 用户级 */
 PUBLIC  int     get_ticks();
+PUBLIC  void    write(char* buf, int len);
