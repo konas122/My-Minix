@@ -102,7 +102,7 @@ PUBLIC void init_prot()
     tss.iobase = sizeof(tss);   // 无I/O许可位图
 
     // 填充 GDT 中进程的 LDT 的描述符
-    PROCESS *p_proc = proc_table;
+    struct proc *p_proc = proc_table;
     u16 selector_ldt = INDEX_LDT_FIRST << 3;
     for (int i = 0; i < NR_TASKS + NR_PROCS; i++) {
         init_descriptor(

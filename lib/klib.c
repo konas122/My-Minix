@@ -13,7 +13,7 @@
 PUBLIC char* itoa(char* str, int num) {
     char *p = str;
     char ch;
-    int i, flag = FALSE;
+    int i, flag = 0;
 
     *p++ = '0';
     *p++ = 'x';
@@ -24,7 +24,7 @@ PUBLIC char* itoa(char* str, int num) {
         for (i = 28; i >= 0; i-= 4) {
             ch = (num >> i) & 0xF;
             if (flag || (ch > 0)) {
-                flag = TRUE;
+                flag = 1;
                 ch += '0';
                 if (ch > '9') {
                     ch += 7;

@@ -1,30 +1,32 @@
-# Entry point of Orange'S
+# Entry point of OS
 # It must have the same value with 'KernelEntryPointPhyAddr' in load.inc!
 ENTRYPOINT	= 0x30400
 
 # Offset of entry point in kernel file
 # It depends on ENTRYPOINT
-ENTRYOFFSET	=   0x400
+ENTRYOFFSET	= 0x400
 
 # Programs, flags, etc.
-ASM		= nasm
-DASM		= ndisasm
-CC		= gcc
-LD		= ld
+ASM			= nasm
+DASM		= objdump
+CC			= gcc
+LD			= ld
 ASMBFLAGS	= -I boot/include/
 ASMKFLAGS	= -I include/ -f elf
-CFLAGS		= -I include/ -c -fno-builtin -m32
-LDFLAGS		= -s -Ttext $(ENTRYPOINT) -m elf_i386
-DASMFLAGS	= -u -o $(ENTRYPOINT) -e $(ENTRYOFFSET)
+CFLAGS		= -I include/ -c -fno-builtin -Wall -m32
+#CFLAGS		= -I include/ -c -fno-builtin -fno-stack-protector -fpack-struct -Wall -m32
+LDFLAGS		= -Ttext $(ENTRYPOINT) -Map krnl.map -m elf_i386
+DASMFLAGS	= -D
 
 # This Program
-ORANGESBOOT	= boot/boot.bin boot/loader.bin
+ORANGESBOOT		= boot/boot.bin boot/loader.bin
 ORANGESKERNEL	= kernel.bin
 OBJS		= kernel/kernel.o kernel/syscall.o kernel/start.o kernel/main.o\
 			kernel/clock.o kernel/keyboard.o kernel/tty.o kernel/console.o\
 			kernel/i8259.o kernel/global.o kernel/protect.o kernel/proc.o\
+			kernel/systask.o\
 			kernel/printf.o kernel/vsprintf.o\
-			lib/kliba.o lib/klib.o lib/string.o
+			lib/kliba.o lib/klib.o lib/string.o lib/misc.o
 DASMOUTPUT	= kernel.bin.asm
 
 # All Phony Targets
@@ -112,8 +114,14 @@ kernel/printf.o: kernel/printf.c
 kernel/vsprintf.o: kernel/vsprintf.c
 	$(CC) $(CFLAGS) -o $@ $<
 
+kernel/systask.o: kernel/systask.c
+	$(CC) $(CFLAGS) -o $@ $<
+
 lib/klib.o: lib/klib.c include/type.h include/const.h include/protect.h include/string.h include/proc.h include/proto.h \
 			include/global.h
+	$(CC) $(CFLAGS) -o $@ $<
+
+lib/misc.o: lib/misc.c
 	$(CC) $(CFLAGS) -o $@ $<
 
 lib/kliba.o : lib/kliba.asm
