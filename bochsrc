@@ -21,7 +21,7 @@ ata0-master: type=disk, path="80m.img", mode=flat, cylinders=162, heads=16, spt=
 boot: a
 
 # where do we send log messages?
-# log: bochsout.txt
+log: bochsout.txt
 
 # disable the mouse
 mouse: enabled=0

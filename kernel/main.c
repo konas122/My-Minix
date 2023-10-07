@@ -35,12 +35,12 @@ PUBLIC int kernel_main()
             p_task    = user_proc_table + (i - NR_TASKS);
             privilege = PRIVILEGE_USER;
             rpl       = RPL_USER;
-            eflags    = 0x202; /* IF=1, bit 2 is always 1 */
+            eflags    = 0x202;  /* IF=1, bit 2 is always 1 */
 			prio      = 5;
         }
 
 		strcpy(p_proc->name, p_task->name);	// name of the process
-		p_proc->pid = i;			// pid
+		p_proc->pid = i;	    // pid
 
 		p_proc->ldt_sel = selector_ldt;
 
@@ -82,6 +82,9 @@ PUBLIC int kernel_main()
     proc_table[NR_TASKS + 0].nr_tty = 0;
     proc_table[NR_TASKS + 1].nr_tty = 1;
     proc_table[NR_TASKS + 2].nr_tty = 1;
+
+    proc_table[2].nr_tty = 2;
+    proc_table[3].nr_tty = 2;
 
     k_reenter = 0;
     ticks = 0;
