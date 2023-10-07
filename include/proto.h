@@ -7,6 +7,9 @@ PUBLIC void	disable_irq(int irq);
 PUBLIC void	enable_irq(int irq);
 PUBLIC void	disable_int();
 PUBLIC void	enable_int();
+PUBLIC void	port_read(u16 port, void* buf, int n);
+PUBLIC void	port_write(u16 port, void* buf, int n);
+PUBLIC void	glitter(int row, int col);
 
 
 /* protect.c */
@@ -73,22 +76,30 @@ PUBLIC  int     printf(const char *fmt, ...);
 
 /* vsprintf.c */
 PUBLIC  int     vsprintf(char *buf, const char *fmt, va_list args);
-PUBLIC	int	sprintf(char *buf, const char *fmt, ...);
+PUBLIC	int     sprintf(char *buf, const char *fmt, ...);
 
 
 /* proc.c */
 PUBLIC	void	schedule();
 PUBLIC	void*	va2la(int pid, void* va);
-PUBLIC	int	ldt_seg_linear(struct proc* p, int idx);
+PUBLIC	int	    ldt_seg_linear(struct proc* p, int idx);
 PUBLIC	void	reset_msg(MESSAGE* p);
 PUBLIC	void	dump_msg(const char * title, MESSAGE* m);
 PUBLIC	void	dump_proc(struct proc * p);
-PUBLIC	int	send_recv(int function, int src_dest, MESSAGE* msg);
+PUBLIC	int	    send_recv(int function, int src_dest, MESSAGE* msg);
+
+
+/* kernel/hd.c */
+PUBLIC void	task_hd();
+PUBLIC void	hd_handler(int irq);
 
 
 /* lib/misc.c */
 PUBLIC void spin(char * func_name);
 
+
+/* fs/main.c */
+PUBLIC void task_fs();
 
 
 /* 以下是系统调用相关 */

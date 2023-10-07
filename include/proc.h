@@ -21,10 +21,10 @@ typedef struct stackframe {
 
 
 typedef struct proc {
-	struct stackframe		regs;	    /* process' registers saved in stack frame */
+	struct stackframe	regs;   	    /* process' registers saved in stack frame */
 
-	u16				ldt_sel;		    /* selector in gdt giving ldt base and limit*/
-	DESCRIPTOR		ldts[LDT_SIZE];	    /* local descriptors for code and data */
+	u16				    ldt_sel;		/* selector in gdt giving ldt base and limit*/
+	struct descriptor	ldts[LDT_SIZE];	/* local descriptors for code and data */
 								        /* 2 is LDT_SIZE - avoid include protect.h */
 
     int             ticks;              /* remained ticks */
@@ -90,7 +90,7 @@ typedef struct task {
 
 
 /* Number of tasks & procs */
-#define NR_TASKS	2
+#define NR_TASKS	4
 #define NR_PROCS	3
 #define FIRST_PROC	proc_table[0]
 #define LAST_PROC	proc_table[NR_TASKS + NR_PROCS - 1]

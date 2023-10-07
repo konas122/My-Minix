@@ -12,9 +12,6 @@ typedef struct s_console
 } CONSOLE;
 
 
-#define DEFAULT_CHAR_COLOR	0x07	    /* 0000 0111 黑底白字 */
-
-
 #define SCR_UP	1	                    /* scroll forward */
 #define SCR_DN	-1	                    /* scroll backward */
 

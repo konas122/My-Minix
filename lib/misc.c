@@ -2,6 +2,7 @@
 #include "const.h"
 #include "protect.h"
 #include "string.h"
+#include "fs.h"
 #include "proc.h"
 #include "tty.h"
 #include "console.h"
@@ -11,7 +12,7 @@
 
 
 PUBLIC void spin(char* func_name) {
-    printl("\nspinning in %s ...\n", func_name);
+    printl("\nspinning in %s ...\n\n", func_name);
 	while (1) {}
 }
 

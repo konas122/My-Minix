@@ -1,16 +1,15 @@
-# Entry point of OS
 # It must have the same value with 'KernelEntryPointPhyAddr' in load.inc!
 ENTRYPOINT	= 0x30400
 
 # Offset of entry point in kernel file
 # It depends on ENTRYPOINT
-ENTRYOFFSET	= 0x400
+ENTRYOFFSET	=   0x400
 
 # Programs, flags, etc.
-ASM			= nasm
-DASM		= objdump
-CC			= gcc
-LD			= ld
+ASM		= nasm
+DASM	= objdump
+CC		= gcc
+LD		= ld
 ASMBFLAGS	= -I boot/include/
 ASMKFLAGS	= -I include/ -f elf
 CFLAGS		= -I include/ -c -fno-builtin -Wall -m32
@@ -19,14 +18,15 @@ LDFLAGS		= -Ttext $(ENTRYPOINT) -Map krnl.map -m elf_i386
 DASMFLAGS	= -D
 
 # This Program
-ORANGESBOOT		= boot/boot.bin boot/loader.bin
-ORANGESKERNEL	= kernel.bin
+KONIXBOOT	= boot/boot.bin boot/loader.bin
+KONIXKERNEL	= kernel.bin
 OBJS		= kernel/kernel.o kernel/syscall.o kernel/start.o kernel/main.o\
 			kernel/clock.o kernel/keyboard.o kernel/tty.o kernel/console.o\
 			kernel/i8259.o kernel/global.o kernel/protect.o kernel/proc.o\
-			kernel/systask.o\
+			kernel/systask.o kernel/hd.o\
 			kernel/printf.o kernel/vsprintf.o\
-			lib/kliba.o lib/klib.o lib/string.o lib/misc.o
+			lib/kliba.o lib/klib.o lib/string.o lib/misc.o\
+			fs/main.o
 DASMOUTPUT	= kernel.bin.asm
 
 # All Phony Targets
@@ -36,7 +36,7 @@ DASMOUTPUT	= kernel.bin.asm
 nop :
 	@echo "why not \`make image' huh? :)"
 
-everything : $(ORANGESBOOT) $(ORANGESKERNEL)
+everything : $(KONIXBOOT) $(KONIXKERNEL)
 
 all : realclean everything
 
@@ -46,10 +46,10 @@ clean :
 	rm -f $(OBJS)
 
 realclean :
-	rm -f $(OBJS) $(ORANGESBOOT) $(ORANGESKERNEL)
+	rm -f $(OBJS) $(KONIXBOOT) $(KONIXKERNEL)
 
 disasm :
-	$(DASM) $(DASMFLAGS) $(ORANGESKERNEL) > $(DASMOUTPUT)
+	$(DASM) $(DASMFLAGS) $(KONIXKERNEL) > $(DASMOUTPUT)
 
 # We assume that "a.img" exists in current folder
 buildimg :
@@ -65,8 +65,8 @@ boot/boot.bin : boot/boot.asm boot/include/load.inc boot/include/fat12hdr.inc
 boot/loader.bin : boot/loader.asm boot/include/load.inc boot/include/fat12hdr.inc boot/include/pm.inc
 	$(ASM) $(ASMBFLAGS) -o $@ $<
 
-$(ORANGESKERNEL) : $(OBJS)
-	$(LD) $(LDFLAGS) -o $(ORANGESKERNEL) $(OBJS)
+$(KONIXKERNEL) : $(OBJS)
+	$(LD) $(LDFLAGS) -o $(KONIXKERNEL) $(OBJS)
 
 kernel/kernel.o : kernel/kernel.asm include/sconst.inc
 	$(ASM) $(ASMKFLAGS) -o $@ $<
@@ -117,6 +117,9 @@ kernel/vsprintf.o: kernel/vsprintf.c
 kernel/systask.o: kernel/systask.c
 	$(CC) $(CFLAGS) -o $@ $<
 
+kernel/hd.o: kernel/hd.c
+	$(CC) $(CFLAGS) -o $@ $<
+
 lib/klib.o: lib/klib.c include/type.h include/const.h include/protect.h include/string.h include/proc.h include/proto.h \
 			include/global.h
 	$(CC) $(CFLAGS) -o $@ $<
@@ -129,3 +132,6 @@ lib/kliba.o : lib/kliba.asm
 
 lib/string.o : lib/string.asm
 	$(ASM) $(ASMKFLAGS) -o $@ $<
+
+fs/main.o: fs/main.c
+	$(CC) $(CFLAGS) -o $@ $<

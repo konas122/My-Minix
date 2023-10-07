@@ -2,6 +2,7 @@
 #include "const.h"
 #include "protect.h"
 #include "string.h"
+#include "fs.h"
 #include "proc.h"
 #include "tty.h"
 #include "console.h"
@@ -19,13 +20,13 @@ PUBLIC void task_sys()
 		int src = msg.source;
 
 		switch (msg.type) {
-		case GET_TICKS:
-			msg.RETVAL = ticks;
-			send_recv(SEND, src, &msg);
-			break;
-		default:
-			panic("unknown msg type");
-			break;
+		    case GET_TICKS:
+			    msg.RETVAL = ticks;
+			    send_recv(SEND, src, &msg);
+			    break;
+		    default:
+			    panic("unknown msg type");
+			    break;
 		}
 	}
 }

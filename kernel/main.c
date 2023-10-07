@@ -2,6 +2,7 @@
 #include "const.h"
 #include "protect.h"
 #include "string.h"
+#include "fs.h"
 #include "proc.h"
 #include "tty.h"
 #include "console.h"
@@ -22,7 +23,7 @@ PUBLIC int kernel_main()
 	int   eflags;
 	int   i;
 	int   prio;
-	for (i = 0; i < NR_TASKS+NR_PROCS; i++) {
+	for (i = 0; i < NR_TASKS + NR_PROCS; i++) {
 	    if (i < NR_TASKS) {     /* 任务 */
             p_task    = task_table + i;
             privilege = PRIVILEGE_TASK;
@@ -60,15 +61,15 @@ PUBLIC int kernel_main()
 		p_proc->regs.esp = (u32)p_task_stack;
 		p_proc->regs.eflags = eflags;
 
-        p_proc->nr_tty = 0;
+        p_proc->nr_tty      = 0;
 
-        p_proc->p_flags = 0;
-		p_proc->p_msg = 0;
-		p_proc->p_recvfrom = NO_TASK;
-		p_proc->p_sendto = NO_TASK;
-		p_proc->has_int_msg = 0;
-		p_proc->q_sending = 0;
-		p_proc->next_sending = 0;
+        p_proc->p_flags     = 0;
+		p_proc->p_msg       = 0;
+		p_proc->p_recvfrom      = NO_TASK;
+		p_proc->p_sendto        = NO_TASK;
+		p_proc->has_int_msg     = 0;
+		p_proc->q_sending       = 0;
+		p_proc->next_sending    = 0;
 
 		p_proc->ticks = p_proc->priority = prio;
 
@@ -136,6 +137,7 @@ void TestB()
 
     while (1) {}
 }
+
 
 void TestC()
 {

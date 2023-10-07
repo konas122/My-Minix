@@ -1,9 +1,11 @@
 #include "type.h"
 #include "const.h"
 #include "protect.h"
-#include "proc.h"
+#include "fs.h"
 #include "tty.h"
 #include "console.h"
+#include "proc.h"
+#include "string.h"
 #include "global.h"
 #include "proto.h"
 
@@ -137,8 +139,8 @@ PRIVATE void init_descriptor(DESCRIPTOR * p_desc, u32 base, u32 limit, u16 attri
 	p_desc->base_low		= base & 0x0FFFF;		    // 段基址 1		(2 字节)
 	p_desc->base_mid		= (base >> 16) & 0x0FF;		// 段基址 2		(1 字节)
 	p_desc->attr1			= attribute & 0xFF;		    // 属性 1
-	p_desc->limit_high_attr2	= ((limit >> 16) & 0x0F) |
-						(attribute >> 8) & 0xF0;        // 段界限 2 + 属性 2
+	p_desc->limit_high_attr2	= ((limit >> 16) & 0x0F) | ((attribute >> 8) & 0xF0);
+                                                        // 段界限 2 + 属性 2
 	p_desc->base_high		= (base >> 24) & 0x0FF;		// 段基址 3		(1 字节)
 }
 
@@ -156,7 +158,7 @@ PUBLIC void exception_handler(int vec_no,int err_code,int eip,int cs,int eflags)
     int i;
 	int text_color = 0x74;      /* 灰底红字 */
 
-	char * err_msg[][64] = {
+	char   err_msg[][64] = {
             "#DE Divide Error",
 			"#DB RESERVED",
 		    "--  NMI Interrupt",
