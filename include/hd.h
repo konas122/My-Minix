@@ -234,10 +234,12 @@ struct hd_cmd {
 	u8	command;
 };
 
+
 struct part_info {
 	u32	base;	/* # of start sector (NOT byte offset, but SECTOR) */
 	u32	size;	/* how many sectors in this partition (NOT byte size, but SECTOR number) */
 };
+
 
 /* main drive struct, one entry per drive */
 struct hd_info
@@ -248,9 +250,11 @@ struct hd_info
 	/* int			precomp; */
 	/* int			lzone; */
 	/* int			ctl; */
-	int			open_cnt;
-	struct part_info	primary[NR_PRIM_PER_DRIVE];
-	struct part_info	logical[NR_SUB_PER_DRIVE];
+	int			        open_cnt;
+    // 用来记录所有主分区的起始扇区和扇区数目
+	struct part_info	primary[NR_PRIM_PER_DRIVE];     
+    // 用来记录所有逻辑分区的起始扇区和扇区数目
+	struct part_info	logical[NR_SUB_PER_DRIVE];      
 };
 
 
@@ -262,6 +266,7 @@ struct hd_info
 #define ATA_IDENTIFY		    0xEC
 #define ATA_READ		0x20
 #define ATA_WRITE		0x30
+
 
 /* for DEVICE register. */
 #define	MAKE_DEVICE_REG(lba,drv,lba_highest) (((lba) << 6) |    \

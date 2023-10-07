@@ -1,6 +1,7 @@
 #ifndef	_KONIX_FS_H_
 #define	_KONIX_FS_H_
 
+
 /**
  * @struct dev_drv_map fs.h "include/sys/fs.h"
  * @brief  The Device_nr.\ - Driver_nr.\ MAP.
@@ -19,11 +20,13 @@ struct dev_drv_map {
 	int driver_nr; /**< The proc nr.\ of the device driver. */
 };
 
+
 /**
  * @def   MAGIC_V1
  * @brief Magic number of FS v1.0
  */
 #define	MAGIC_V1	0x111
+
 
 /**
  * @struct super_block fs.h "include/fs.h"
@@ -61,9 +64,9 @@ struct super_block {
 	u32	magic;		  /**< Magic number */
 	u32	nr_inodes;	  /**< How many inodes */
 	u32	nr_sects;	  /**< How many sectors (including bit maps) */
-	u32	nr_imap_sects;	  /**< How many inode-map sectors */
-	u32	nr_smap_sects;	  /**< How many sector-map sectors */
-	u32	n_1st_sect;	  /**< Number of the 1st data sector */
+	u32	nr_imap_sects;	/**< How many inode-map sectors */
+	u32	nr_smap_sects;  /**< How many sector-map sectors */
+	u32	n_1st_sect;	    /**< Number of the 1st data sector */
 
 	u32	nr_inode_sects;   /**< How many inode sectors */
 	u32	root_inode;       /**< Inode nr of root directory */
@@ -80,12 +83,14 @@ struct super_block {
 	int	sb_dev; 	/**< the super block's home device */
 };
 
+
 /**
  * @def   SUPER_BLK_MAGIC_V1
  * @brief Magic number of super block, version 1.
  * @attention It must correspond with boot/include/load.h::SB_MAGIC_V1
  */
 #define	SUPER_BLK_MAGIC_V1		0x111
+
 
 /**
  * @def   SUPER_BLOCK_SIZE
@@ -95,6 +100,7 @@ struct super_block {
  * The size in memory is larger because of some more members.
  */
 #define	SUPER_BLOCK_SIZE	56
+
 
 /**
  * @struct inode
@@ -113,10 +119,10 @@ struct super_block {
  * \b NOTE: Remember to change INODE_SIZE if the members are changed
  */
 struct inode {
-	u32	i_mode;		/**< Accsess mode. Unused currently */
-	u32	i_size;		/**< File size */
-	u32	i_start_sect;	/**< The first sector of the data */
-	u32	i_nr_sects;	/**< How many sectors the file occupies */
+	u32	i_mode;		    /**< Accsess mode. Unused currently 主要用于区分文件类型 */
+	u32	i_size;		    /**< File size 文件大小 */
+	u32	i_start_sect;	/**< The first sector of the data 文件起始扇区 */
+	u32	i_nr_sects;	    /**< How many sectors the file occupies 总扇区数 */
 	u8	_unused[16];	/**< Stuff for alignment */
 
 	/* the following items are only present in memory */
@@ -124,6 +130,7 @@ struct inode {
 	int	i_cnt;		/**< How many procs share this inode  */
 	int	i_num;		/**< inode nr.  */
 };
+
 
 /**
  * @def   INODE_SIZE
@@ -134,13 +141,41 @@ struct inode {
  */
 #define	INODE_SIZE	32
 
+
+/**
+ * @def   MAX_FILENAME_LEN
+ * @brief Max len of a filename
+ * @see   dir_entry
+ */
+#define	MAX_FILENAME_LEN	12
+
+/**
+ * 用于存放根目录文件中的数据结构
+ * 
+ * @struct dir_entry
+ * @brief  Directory Entry
+ */
+struct dir_entry {
+	int	inode_nr;		            /**< inode nr. */
+	char	name[MAX_FILENAME_LEN];	/**< Filename */
+};
+
+/**
+ * @def   DIR_ENTRY_SIZE
+ * @brief The size of directory entry in the device.
+ *
+ * It is as same as the size in memory.
+ */
+#define	DIR_ENTRY_SIZE	sizeof(struct dir_entry)
+
+
 /**
  * @struct file_desc
  * @brief  File Descriptor
  */
 struct file_desc {
-	int		fd_mode;	/**< R or W */
-	int		fd_pos;		/**< Current position for R/W. */
+	int		fd_mode;	        /**< R or W */
+	int		fd_pos;		        /**< Current position for R/W. */
 	struct inode*	fd_inode;	/**< Ptr to the i-node */
 };
 
@@ -168,3 +203,18 @@ struct file_desc {
 
 	
 #endif
+
+
+
+/**
+ * 这里主要定义了三个结构体：超级块、i-node和目录表
+ *  超级块：
+ *      - 文件系统标识。这里用了一个魔数来表明文件系统v1.0
+ *      - 文件系统最多允许多少个`i-node`
+ *      - `inode_array`占用多少扇区
+ *      - 文件系统总共占有扇区数是多少
+ *      - `inode-map`占用多少扇区
+ *      - `sector-map`占用多少扇区
+ *      - 第一个数据扇区的扇区号是多少
+ *      - 根目录的`i-node`是多少
+*/

@@ -18,10 +18,15 @@ void assertion_failure(char *exp, char *file, char *base_file, int line);
 
 
 /* 函数类型 */
-#define	PUBLIC		/* PUBLIC is the opposite of PRIVATE */
+#define	PUBLIC		    /* PUBLIC is the opposite of PRIVATE */
 #define	PRIVATE	static	/* PRIVATE x limits the scope of x */
 
 #define	STR_DEFAULT_LEN	1024
+
+
+/* max() & min() */
+#define	max(a,b)	((a) > (b) ? (a) : (b))
+#define	min(a,b)	((a) < (b) ? (a) : (b))
 
 
 /* Color */
@@ -226,7 +231,7 @@ enum msgtype {
 #define	NR_PRIM_PER_DRIVE	(NR_PART_PER_DRIVE + 1)     // 表示hd[0~4]这五个分区：整块硬盘(hd0)和主分区(hd[1~4])
 
 /**
- * @def MAX_PRIM_DEV
+ * @def MAX_PRIM
  * Defines the max minor number of the primary partitions.
  * If there are 2 disks, prim_dev ranges in hd[0-9], this macro will
  * equals 9.
