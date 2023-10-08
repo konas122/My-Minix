@@ -45,10 +45,10 @@ PUBLIC int kernel_main()
 		p_proc->ldt_sel = selector_ldt;
 
 		memcpy(&p_proc->ldts[0], &gdt[SELECTOR_KERNEL_CS >> 3],
-		       sizeof(DESCRIPTOR));
+		       sizeof(struct descriptor));
 		p_proc->ldts[0].attr1 = DA_C | privilege << 5;
 		memcpy(&p_proc->ldts[1], &gdt[SELECTOR_KERNEL_DS >> 3],
-		       sizeof(DESCRIPTOR));
+		       sizeof(struct descriptor));
 		p_proc->ldts[1].attr1 = DA_DRW | privilege << 5;
 		p_proc->regs.cs	= (0 & SA_RPL_MASK & SA_TI_MASK) | SA_TIL | rpl;
 		p_proc->regs.ds	= (8 & SA_RPL_MASK & SA_TI_MASK) | SA_TIL | rpl;

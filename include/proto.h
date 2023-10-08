@@ -101,6 +101,8 @@ PUBLIC void spin(char * func_name);
 
 /* fs/main.c */
 PUBLIC void task_fs();
+PUBLIC int  rw_sector(int io_type, int dev, u64 pos, int bytes, int proc_nr,
+		      void * buf);
 
 
 /* 以下是系统调用相关 */

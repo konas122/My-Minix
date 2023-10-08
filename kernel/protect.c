@@ -12,7 +12,7 @@
 
 /* 本文件内函数声明 */
 PRIVATE void init_idt_desc(unsigned char vector, u8 desc_type, int_handler handler, unsigned char privilege);
-PRIVATE void init_descriptor(DESCRIPTOR * p_desc, u32 base, u32 limit, u16 attribute);
+PRIVATE void init_descriptor(struct descriptor * p_desc, u32 base, u32 limit, u16 attribute);
 
 /* 中断处理函数 */
 void	divide_error();
@@ -110,7 +110,7 @@ PUBLIC void init_prot()
         init_descriptor(
             &gdt[selector_ldt >> 3],
             vir2phys(seg2phys(SELECTOR_KERNEL_DS), proc_table[i].ldts),
-            LDT_SIZE * sizeof(DESCRIPTOR) - 1,
+            LDT_SIZE * sizeof(struct descriptor) - 1,
             DA_LDT);
         p_proc++;
         selector_ldt += 1 << 3;
@@ -122,7 +122,7 @@ PUBLIC void init_prot()
 PRIVATE void init_idt_desc(unsigned char vector, u8 desc_type,
 			  int_handler handler, unsigned char privilege)
 {
-    GATE *p_gate        = &idt[vector];
+    struct gate *p_gate = &idt[vector];
     u32 base            = (u32)handler;
     p_gate->offset_low  = base & 0xFFFF;
     p_gate->selector    = SELECTOR_KERNEL_CS;
@@ -133,7 +133,7 @@ PRIVATE void init_idt_desc(unsigned char vector, u8 desc_type,
 
 
 // 初始化段描述符
-PRIVATE void init_descriptor(DESCRIPTOR * p_desc, u32 base, u32 limit, u16 attribute)
+PRIVATE void init_descriptor(struct descriptor * p_desc, u32 base, u32 limit, u16 attribute)
 {
 	p_desc->limit_low		= limit & 0x0FFFF;		    // 段界限 1		(2 字节)
 	p_desc->base_low		= base & 0x0FFFF;		    // 段基址 1		(2 字节)
@@ -147,7 +147,7 @@ PRIVATE void init_descriptor(DESCRIPTOR * p_desc, u32 base, u32 limit, u16 attri
 
 // 由段名求绝对地址
 PUBLIC u32 seg2phys(u16 seg) {
-	DESCRIPTOR* p_dest = &gdt[seg >> 3];
+	struct descriptor* p_dest = &gdt[seg >> 3];
 
 	return (p_dest->base_high << 24) | (p_dest->base_mid << 16) | (p_dest->base_low);
 }

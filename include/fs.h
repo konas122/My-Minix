@@ -150,13 +150,13 @@ struct inode {
 #define	MAX_FILENAME_LEN	12
 
 /**
- * 用于存放根目录文件中的数据结构
+ * 用于存放根目录文件中的数据结构，用来索引一个文件
  * 
  * @struct dir_entry
  * @brief  Directory Entry
  */
 struct dir_entry {
-	int	inode_nr;		            /**< inode nr. */
+	int	    inode_nr;		        /**< inode nr. */
 	char	name[MAX_FILENAME_LEN];	/**< Filename */
 };
 
@@ -207,9 +207,9 @@ struct file_desc {
 
 
 /**
- * 这里主要定义了三个结构体：超级块、i-node和目录表
+ * 这里主要定义了三个结构体：超级块(super_block)、i-node(inode)和目录表(dir_entry)
  *  超级块：
- *      - 文件系统标识。这里用了一个魔数来表明文件系统v1.0
+ *      - 文件系统标识。这里用了一个魔数来表明文件系统是"FS v1.0"
  *      - 文件系统最多允许多少个`i-node`
  *      - `inode_array`占用多少扇区
  *      - 文件系统总共占有扇区数是多少

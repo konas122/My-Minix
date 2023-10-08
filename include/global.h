@@ -29,5 +29,7 @@ extern  CONSOLE		console_table[];
 
 
 /* FS */
+extern	u8 *			fsbuf;
+extern	const int		FSBUF_SIZE;
 extern	struct dev_drv_map	dd_map[];
 
