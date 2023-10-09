@@ -1,5 +1,6 @@
 #include "type.h"
 #include "config.h"
+#include "stdio.h"
 #include "const.h"
 #include "protect.h"
 #include "string.h"
@@ -18,6 +19,7 @@ struct part_info {
 
 PRIVATE void init_fs();
 PRIVATE void mkfs();
+PRIVATE void read_super_block(int dev);
 
 
 /**
@@ -26,7 +28,52 @@ PRIVATE void mkfs();
 PUBLIC void task_fs() {
     printl("Task FS begins.\n");
 	init_fs();
-	spin("FS");
+
+    while (1) {
+		send_recv(RECEIVE, ANY, &fs_msg);
+
+		int src = fs_msg.source;
+		pcaller = &proc_table[src];
+
+		switch (fs_msg.type) {
+		case OPEN:
+			fs_msg.FD = do_open();
+			break;
+		case CLOSE:
+			fs_msg.RETVAL = do_close();
+			break;
+		/* case READ: */
+		/* case WRITE: */
+		/* 	fs_msg.CNT = do_rdwt(); */
+		/* 	break; */
+		/* case LSEEK: */
+		/* 	fs_msg.OFFSET = do_lseek(); */
+		/* 	break; */
+		/* case UNLINK: */
+		/* 	fs_msg.RETVAL = do_unlink(); */
+		/* 	break; */
+		/* case RESUME_PROC: */
+		/* 	src = fs_msg.PROC_NR; */
+		/* 	break; */
+		/* case FORK: */
+		/* 	fs_msg.RETVAL = fs_fork(); */
+		/* 	break; */
+		/* case EXIT: */
+		/* 	fs_msg.RETVAL = fs_exit(); */
+		/* 	break; */
+		/* case STAT: */
+		/* 	fs_msg.RETVAL = do_stat(); */
+		/* 	break; */
+		default:
+			dump_msg("FS::unknown message:", &fs_msg);
+			assert(0);
+			break;
+		}
+
+		/* reply */
+		fs_msg.type = SYSCALL_RET;
+		send_recv(SEND, src, &fs_msg);
+	}
 }
 
 
@@ -35,9 +82,23 @@ PUBLIC void task_fs() {
 */
 PRIVATE void init_fs()
 {
+	int i;
+
+	/* f_desc_table[] */
+	for (i = 0; i < NR_FILE_DESC; i++)
+		memset(&f_desc_table[i], 0, sizeof(struct file_desc));
+
+	/* inode_table[] */
+	for (i = 0; i < NR_INODE; i++)
+		memset(&inode_table[i], 0, sizeof(struct inode));
+
+	/* super_block[] */
+	struct super_block * sb = super_block;
+	for (; sb < &super_block[NR_SUPER_BLOCK]; sb++)
+		sb->sb_dev = NO_DEV;
+        
 	/* open the device: hard disk */
 	MESSAGE driver_msg;
-
     /**
      * 这里我们不仅将`ROOT_DEV`的次设备号通过消息发给了驱动程序，
      * 而且使用哪个驱动程序也变成由`dd_map`来选择。这样一来，
@@ -48,8 +109,26 @@ PRIVATE void init_fs()
 	assert(dd_map[MAJOR(ROOT_DEV)].driver_nr != INVALID_DRIVER);
 	send_recv(BOTH, dd_map[MAJOR(ROOT_DEV)].driver_nr, &driver_msg);
 
+    /* make FS */
 	mkfs();
+
+	/* load super block of ROOT */
+	read_super_block(ROOT_DEV);
+
+	sb = get_super_block(ROOT_DEV);
+	assert(sb->magic == MAGIC_V1);
+
+	root_inode = get_inode(ROOT_DEV, ROOT_INODE);    
 }
+
+
+
+
+
+
+
+
+
 
 
 /**
@@ -66,7 +145,7 @@ PRIVATE void mkfs()
 	MESSAGE driver_msg;
 	int i, j;
 
-	int bits_per_sect = SECTOR_SIZE * 8; /* 8 bits per byte */
+	int bits_per_sect = SECTOR_SIZE * 8;    /* 8 bits per byte */
 
 	/**
      *  get the geometry of ROOTDEV 
@@ -90,17 +169,17 @@ PRIVATE void mkfs()
 	sb.magic	  = MAGIC_V1;
 	sb.nr_inodes	  = bits_per_sect;
 	sb.nr_inode_sects = sb.nr_inodes * INODE_SIZE / SECTOR_SIZE;
-	sb.nr_sects	  = geo.size; /* partition size in sector */
+	sb.nr_sects	      = geo.size;   /* partition size in sector */
 	sb.nr_imap_sects  = 1;
 	sb.nr_smap_sects  = sb.nr_sects / bits_per_sect + 1;
-	sb.n_1st_sect	  = 1 + 1 +   /* boot sector & super block */
+	sb.n_1st_sect	  = 1 + 1 +     /* boot sector & super block */
 		sb.nr_imap_sects + sb.nr_smap_sects + sb.nr_inode_sects;
 	sb.root_inode	  = ROOT_INODE;
 	sb.inode_size	  = INODE_SIZE;
 	struct inode x;
-	sb.inode_isize_off= (int)&x.i_size - (int)&x;
-	sb.inode_start_off= (int)&x.i_start_sect - (int)&x;
-	sb.dir_ent_size	  = DIR_ENTRY_SIZE;
+	sb.inode_isize_off  = (int)&x.i_size - (int)&x;
+	sb.inode_start_off  = (int)&x.i_start_sect - (int)&x;
+	sb.dir_ent_size	    = DIR_ENTRY_SIZE;
 	struct dir_entry de;
 	sb.dir_ent_inode_off = (int)&de.inode_nr - (int)&de;
 	sb.dir_ent_fname_off = (int)&de.name - (int)&de;
@@ -187,9 +266,9 @@ PRIVATE void mkfs()
 	/*          `/'         */
 	/************************/
 	memset(fsbuf, 0, SECTOR_SIZE);
-	struct dir_entry * pde = (struct dir_entry *)fsbuf;
+    struct dir_entry *pde = (struct dir_entry *)fsbuf;
 
-	pde->inode_nr = 1;
+    pde->inode_nr = 1;
 	strcpy(pde->name, ".");
 
 	/* dir entries of `/dev_tty0~2' */
@@ -200,6 +279,24 @@ PRIVATE void mkfs()
 	}
 	WR_SECT(ROOT_DEV, sb.n_1st_sect);
 }
+/**
+ * `mkfs()`建立文件系统：
+ *  - 向硬盘驱动程序索取`ROOT_DEV`的起始扇区和大小
+ *  - 建立Super Block
+ *  - 建立inode-map
+ *  - 建立sector-map
+ *  - 写入inode_array
+ *  - 建立根目录文件
+*/
+
+
+
+
+
+
+
+
+
 
 
 /**
@@ -232,12 +329,200 @@ PUBLIC int rw_sector(int io_type, int dev, u64 pos, int bytes, int proc_nr,
 }
 
 
+
+
+
+
+
+
+
+
+
+
+/*****************************************************************************
+ *                                read_super_block
+ *****************************************************************************/
 /**
- * `mkfs()`建立文件系统：
- *  - 向硬盘驱动程序索取`ROOT_DEV`的起始扇区和大小
- *  - 建立Super Block
- *  - 建立inode-map
- *  - 建立sector-map
- *  - 写入inode_array
- *  - 建立根目录文件
+ * <Ring 1> Read super block from the given device then write it into a free
+ *          super_block[] slot.
+ * 
+ * @param dev  From which device the super block comes.
+ *****************************************************************************/
+PRIVATE void read_super_block(int dev) {
+    int i;
+    MESSAGE driver_msg;
+
+	driver_msg.type		= DEV_READ;
+	driver_msg.DEVICE	= MINOR(dev);
+	driver_msg.POSITION	= SECTOR_SIZE * 1;
+	driver_msg.BUF		= fsbuf;
+	driver_msg.CNT		= SECTOR_SIZE;
+	driver_msg.PROC_NR	= TASK_FS;
+	assert(dd_map[MAJOR(dev)].driver_nr != INVALID_DRIVER);
+
+    send_recv(BOTH, dd_map[MAJOR(dev)].driver_nr, &driver_msg);
+
+    // find a free slot in super_block[]
+    for (i = 0; i < NR_SUPER_BLOCK; i++) {
+        if (super_block[i].sb_dev == NO_DEV)
+            break;
+    }
+    if (i == NR_SUPER_BLOCK)
+        panic("super_bloc slots used up");
+
+	assert(i == 0);             /* currently we use only the 1st slot */
+
+	struct super_block * psb = (struct super_block *)fsbuf;
+
+	super_block[i] = *psb;
+	super_block[i].sb_dev = dev;    
+}
+/**
+ * `read_super_block()`的作用是将一个设备的super-block读入缓存
+*/
+
+
+/*****************************************************************************
+ *                                get_super_block
+ *****************************************************************************/
+/**
+ * <Ring 1> Get the super block from super_block[].
+ * 
+ * @param dev Device nr.
+ * 
+ * @return Super block ptr.
+ *****************************************************************************/
+PUBLIC struct super_block * get_super_block(int dev)
+{
+	struct super_block * sb = super_block;
+	for (; sb < &super_block[NR_SUPER_BLOCK]; sb++)
+		if (sb->sb_dev == dev)
+			return sb;
+
+	panic("super block of devie %d not found.\n", dev);
+
+	return 0;
+}
+/**
+ * `get_super_block()`可以得到给定设备的super-block指针
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+/*****************************************************************************
+ *                                get_inode
+ *****************************************************************************/
+/**
+ * <Ring 1> Get the inode ptr of given inode nr. A cache -- inode_table[] -- is
+ * maintained to make things faster. If the inode requested is already there,
+ * just return it. Otherwise the inode will be read from the disk.
+ * 
+ * @param dev Device nr.
+ * @param num I-node nr.
+ * 
+ * @return The inode ptr requested.
+ *****************************************************************************/
+PUBLIC struct inode * get_inode(int dev, int num) {
+    if (num == 0)
+        return 0;
+
+    struct inode *p;
+    struct inode *q = 0;
+    for (p = &inode_table[0]; p < &inode_table[NR_INODE]; p++) {
+        if (p->i_cnt) {     // not a free slot
+            if ((p->i_dev == dev) && (p->i_num == num)) {
+                // this is the inode we want
+                p->i_cnt++;
+                return p;
+            }
+        }
+        else {		        /* a free slot */
+			if (!q)         /* q hasn't been assigned yet */
+				q = p;      /* q <- the 1st free slot */
+		}
+    }
+
+	if (!q)
+		panic("the inode table is full");    
+
+	q->i_dev = dev;
+	q->i_num = num;
+	q->i_cnt = 1;
+
+    struct super_block *sb = get_super_block(dev);
+    int blk_nr = 1 + 1 + sb->nr_imap_sects + sb->nr_smap_sects +
+                 ((num - 1) / (SECTOR_SIZE / INODE_SIZE));
+    RD_SECT(dev, blk_nr);
+    struct inode *pinode = (struct inode *)((u8 *)fsbuf +
+                            ((num - 1) % (SECTOR_SIZE / INODE_SIZE)) 
+                            * INODE_SIZE);
+	q->i_mode = pinode->i_mode;
+	q->i_size = pinode->i_size;
+	q->i_start_sect = pinode->i_start_sect;
+	q->i_nr_sects = pinode->i_nr_sects;
+	return q;                            
+}
+
+
+/*****************************************************************************
+ *                                put_inode
+ *****************************************************************************/
+/**
+ * Decrease the reference nr of a slot in inode_table[]. When the nr reaches
+ * zero, it means the inode is not used any more and can be overwritten by
+ * a new inode.
+ * 
+ * @param pinode I-node ptr.
+ *****************************************************************************/
+PUBLIC void put_inode(struct inode * pinode) {
+	assert(pinode->i_cnt > 0);
+	pinode->i_cnt--;
+}
+
+
+/*****************************************************************************
+ *                                sync_inode
+ *****************************************************************************/
+/**
+ * <Ring 1> Write the inode back to the disk. Commonly invoked as soon as the
+ *          inode is changed.
+ * 
+ * @param p I-node ptr.
+ *****************************************************************************/
+PUBLIC void sync_inode(struct inode * p) {
+    struct inode *pinode;
+    struct super_block *sb = get_super_block(p->i_dev);
+	int blk_nr = 1 + 1 + sb->nr_imap_sects + sb->nr_smap_sects +
+		((p->i_num - 1) / (SECTOR_SIZE / INODE_SIZE));    
+	RD_SECT(p->i_dev, blk_nr);
+	pinode = (struct inode*)((u8*)fsbuf +
+				 (((p->i_num - 1) % (SECTOR_SIZE / INODE_SIZE))
+				  * INODE_SIZE));
+	pinode->i_mode = p->i_mode;
+	pinode->i_size = p->i_size;
+	pinode->i_start_sect = p->i_start_sect;
+	pinode->i_nr_sects = p->i_nr_sects;
+	WR_SECT(p->i_dev, blk_nr);
+}
+
+/**
+ *  如果一个inode已经被读入inode_table[]这个缓冲区，那么下一次再需要它时，
+ * 就不用再进行一次磁盘I/O，直接从缓冲区读出来就可以了。
+ *  这里我们使用了比较较原始的策略来保持磁盘和缓冲区的一致性：一旦内存中的值发生变化，
+ * 则立即写入磁盘 —— 这由`sync_inode()`来完成。
+ * 
+ *  对于缓冲区的管理是这样的：如果一个inode的in_cnt为0，那么被认为是未使用，
+ * 于是可以分配给新读入的i-node。一旦一个i-node读入，那么i_cnt自增。当i-node用完之后，
+ * 使用者应调用一个`put_inode()`，这样i_cnt自减。当i-node自减至零时，说明不再有人继续使用
+ * 这个i-node，它就变成一个空项了。
+ * 
 */

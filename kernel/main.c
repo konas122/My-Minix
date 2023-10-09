@@ -1,4 +1,5 @@
 #include "type.h"
+#include "stdio.h"
 #include "const.h"
 #include "protect.h"
 #include "string.h"
@@ -79,7 +80,7 @@ PUBLIC int kernel_main()
 		selector_ldt += 1 << 3;
 	}
 
-    proc_table[NR_TASKS + 0].nr_tty = 0;
+    proc_table[NR_TASKS + 0].nr_tty = 2;
     proc_table[NR_TASKS + 1].nr_tty = 1;
     proc_table[NR_TASKS + 2].nr_tty = 1;
 
@@ -118,8 +119,13 @@ void TestA()
 		// disp_color_str("A.", BRIGHT | MAKE_COLOR(BLACK, RED));
         // disp_int(get_ticks());
 
-        printf("<Ticks:%d>", get_ticks());
-        milli_delay(200);
+        // printf("<Ticks:%d>", get_ticks());
+        // milli_delay(200);
+
+        int fd = open("/blah", O_CREAT);
+        printf("fd: %d\n", fd);
+        close(fd);
+        spin("TestA");        
     }
 
     while (1) {}

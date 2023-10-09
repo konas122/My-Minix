@@ -61,9 +61,9 @@ struct dev_drv_map {
  * \enddot
  */
 struct super_block {
-	u32	magic;		  /**< Magic number */
-	u32	nr_inodes;	  /**< How many inodes */
-	u32	nr_sects;	  /**< How many sectors (including bit maps) */
+	u32	magic;		    /**< Magic number */
+	u32	nr_inodes;	    /**< How many inodes */
+	u32	nr_sects;	    /**< How many sectors (including bit maps) */
 	u32	nr_imap_sects;	/**< How many inode-map sectors */
 	u32	nr_smap_sects;  /**< How many sector-map sectors */
 	u32	n_1st_sect;	    /**< Number of the 1st data sector */
@@ -175,7 +175,7 @@ struct dir_entry {
  */
 struct file_desc {
 	int		fd_mode;	        /**< R or W */
-	int		fd_pos;		        /**< Current position for R/W. */
+	int		fd_pos;		        /**< Current position for R/W. 用来记录读写到了文件的什么位置 */
 	struct inode*	fd_inode;	/**< Ptr to the i-node */
 };
 

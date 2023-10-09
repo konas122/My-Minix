@@ -77,7 +77,14 @@ typedef struct proc {
                                          */
 
     int nr_tty;
+
+    struct file_desc * filp[NR_FILES];  /** 
+                                         * file descriptor 
+                                         * 每当一个进程打开一个文件（无论是打开已存在的，还是创建新的），
+                                         * 该进程的filp数组中就会分配一个位置，用来存放打开文件的fd指针。
+                                         */
 } PROCESS;
+
 
 typedef struct task {
     task_f      initial_eip;
