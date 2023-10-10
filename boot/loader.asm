@@ -123,8 +123,15 @@ LABEL_FILENAME_FOUND:			; 找到 KERNEL.BIN 后便来到这里继续
     push	eax
 	mov	eax, [es : di + 01Ch]		
 	mov	dword [dwKernelSize], eax
+	cmp	eax, KERNEL_VALID_SPACE
+	ja	.1
 	pop	eax
-
+	jmp	.2
+.1:
+	mov	dh, 4			        ; "Too Large"
+	call	DispStrRealMode		; 显示字符串
+	jmp	$			            ; KERNEL.BIN 太大，死循环在这里
+.2:
 	add	di, 01Ah		        ; di -> 首 Sector
 	mov	cx, word [es:di]
 	push	cx			        ; 保存此 Sector 在 FAT 中的序号
@@ -157,12 +164,37 @@ LABEL_GOON_LOADING_FILE:
 	add	ax, dx
 	add	ax, DeltaSectorNo
 	add	bx, [BPB_BytsPerSec]
+
+    jc  .1                      ; 如果 bx 重新变成 0，说明内核大于 64KB
+    jmp .2
+.1:
+    push    ax                  ; es += 0x1000  ← es 指向下一个段
+    mov ax, es
+    add ax, 1000h
+    mov es, ax
+    pop ax
+.2:
 	jmp	LABEL_GOON_LOADING_FILE
 LABEL_FILE_LOADED:
 
 	call	KillMotor		    ; 关闭软驱马达
 
-	mov	dh, 1			        ; "Ready."
+    ; 将硬盘引导扇区内容读入内存 0500h 处
+    xor ax, ax
+    mov es, ax
+    mov ax, 0201h               ; AH = 02
+	                            ; AL = number of sectors to read (must be nonzero) 
+	mov     cx, 1               ; CH = low eight bits of cylinder number
+	                            ; CL = sector number 1-63 (bits 0-5)
+	                            ;      high two bits of cylinder (bits 6-7, hard disk only)
+	mov     dx, 80h             ; DH = head number
+	                            ; DL = drive number (bit 7 set for hard disk)
+	mov     bx, 500h            ; ES:BX -> data buffer
+	int     13h
+    ; 硬盘操作完毕
+    
+
+	mov	dh, 2			        ; "Ready."
 	call	DispStrRealMode		
 
 
@@ -343,6 +375,13 @@ LABEL_PM_START:
     call	InitKernel
 
 	;jmp	$
+    mov	dword [BOOT_PARAM_ADDR], BOOT_PARAM_MAGIC	; BootParam[0] = BootParamMagic;
+	mov	eax, [dwMemSize]				            ;
+	mov	[BOOT_PARAM_ADDR + 4], eax			        ; BootParam[1] = MemSize;
+	mov	eax, BaseOfKernelFile
+	shl	eax, 4
+	add	eax, OffsetOfKernelFile
+	mov	[BOOT_PARAM_ADDR + 8], eax			        ; BootParam[2] = KernelFilePhyAddr;
 
 	; 正式进入内核
 	jmp	SelectorFlatC : KernelEntryPointPhyAddr

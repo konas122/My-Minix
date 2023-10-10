@@ -174,8 +174,8 @@ struct dir_entry {
  * @brief  File Descriptor
  */
 struct file_desc {
-	int		fd_mode;	        /**< R or W */
-	int		fd_pos;		        /**< Current position for R/W. 用来记录读写到了文件的什么位置 */
+	int		        fd_mode;    /**< R or W */
+	int		        fd_pos;     /**< Current position for R/W. 用来记录读写到了文件的什么位置 */
 	struct inode*	fd_inode;	/**< Ptr to the i-node */
 };
 
@@ -218,3 +218,4 @@ struct file_desc {
  *      - 第一个数据扇区的扇区号是多少
  *      - 根目录的`i-node`是多少
 */
+
