@@ -42,9 +42,9 @@ PUBLIC int search_file(char * path) {
 	/**
 	 * Search the dir for the file.
 	 */
-    int dir_blk0_nr = dir_inode->i_start_sect;                              // 文件起始扇区
-    int nr_dir_blks = (dir_inode->i_size + SECTOR_SIZE - 1) / SECTOR_SIZE;  // 文件占用的扇区数目
-    int nr_dir_entries = dir_inode->i_size / DIR_ENTRY_SIZE;     /**
+    int dir_blk0_nr     = dir_inode->i_start_sect;                              // 文件起始扇区
+    int nr_dir_blks     = (dir_inode->i_size + SECTOR_SIZE - 1) / SECTOR_SIZE;  // 文件占用的扇区数目
+    int nr_dir_entries  = dir_inode->i_size / DIR_ENTRY_SIZE;     /**
 					       * including unused slots
 					       * (the file has been deleted
 					       * but the slot is still there)
@@ -69,7 +69,6 @@ PUBLIC int search_file(char * path) {
 }
 /**
  *  我们先通过strip_path()来得到文件所在目录的i-node，通过这个i-node来得目录所在的扇区，
- * 然后读取这些扇区，查看路面是否有我们要找的文件，如果找到就返回文件的i-node，若无则返回0。
 */
 
 

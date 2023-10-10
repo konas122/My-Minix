@@ -12,11 +12,11 @@
 #include "proto.h"
 
 
-PRIVATE struct inode * create_file(char * path, int flags);
-PRIVATE int alloc_imap_bit(int dev);
-PRIVATE int alloc_smap_bit(int dev, int nr_sects_to_alloc);
-PRIVATE struct inode * new_inode(int dev, int inode_nr, int start_sect);
-PRIVATE void new_dir_entry(struct inode * dir_inode, int inode_nr, char * filename);
+PRIVATE struct inode *  create_file(char * path, int flags);
+PRIVATE int             alloc_imap_bit(int dev);
+PRIVATE int             alloc_smap_bit(int dev, int nr_sects_to_alloc);
+PRIVATE struct inode *  new_inode(int dev, int inode_nr, int start_sect);
+PRIVATE void            new_dir_entry(struct inode * dir_inode, int inode_nr, char * filename);
 
 
 /*****************************************************************************
@@ -265,7 +265,7 @@ PRIVATE int alloc_imap_bit(int dev) {
         RD_SECT(dev, imap_blk0_nr + i);
 
         for (j = 0; j < SECTOR_SIZE; j++) {
-            			/* skip `11111111' bytes */
+            /* skip `11111111' bytes */
 			if (fsbuf[j] == 0xFF)
 				continue;
 
@@ -348,6 +348,7 @@ PRIVATE int alloc_smap_bit(int dev, int nr_sects_to_alloc) {
 }
 /**
  *  `alloc_imap_bit()`和`alloc_smap_bit()`都是对位图的操作，代码比较相似。
+ * 
  *  在`sector-map`中分配扇区时，我们没考虑太多别的情况。换句话说，我们一旦找到一个未使用的扇区，
  * 就认为以它为开头存在连续`nr_sects_to_alloc`个扇区。（所以这代码乍一看感觉挺不合逻辑的）
  * 

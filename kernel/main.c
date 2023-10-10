@@ -113,22 +113,73 @@ PUBLIC int get_ticks()
 
 void TestA()
 {
-	int i = 0x0100;
-	while (i--) {
-        // disp_int(sys_get_ticks());
-		// disp_color_str("A.", BRIGHT | MAKE_COLOR(BLACK, RED));
-        // disp_int(get_ticks());
+	// int i = 0x0100;
+    // disp_int(sys_get_ticks());
+	// disp_color_str("A.", BRIGHT | MAKE_COLOR(BLACK, RED));
+    // disp_int(get_ticks());
 
-        // printf("<Ticks:%d>", get_ticks());
-        // milli_delay(200);
+    // printf("<Ticks:%d>", get_ticks());
+    // milli_delay(200);
 
-        int fd = open("/blah", O_CREAT);
-        printf("fd: %d\n", fd);
-        close(fd);
-        spin("TestA");        
-    }
+    // int fd = open("/blah", O_CREAT);
+    // printf("fd: %d\n", fd);
+    int fd;
+	int n;
+	const char filename[] = "blah";
+	const char bufw[] = "abcde";
+	const int rd_bytes = 3;
+	char bufr[rd_bytes];
 
-    while (1) {}
+	assert(rd_bytes <= strlen(bufw));
+
+	/* create */
+	fd = open(filename, O_CREAT | O_RDWR);
+	assert(fd != -1);
+	printf("File created. fd: %d\n", fd);
+
+	/* write */
+	n = write(fd, bufw, strlen(bufw));
+	assert(n == strlen(bufw));
+
+	/* close */
+	close(fd);
+
+	/* open */
+	fd = open(filename, O_RDWR);
+	assert(fd != -1);
+	printf("File opened. fd: %d\n", fd);
+
+	/* read */
+	n = read(fd, bufr, rd_bytes);
+	assert(n == rd_bytes);
+	bufr[n] = 0;
+	printf("%d bytes read: %s\n", n, bufr);
+
+	/* close */
+	close(fd);
+
+    char * filenames[] = {"/foo", "/bar", "/baz"};
+
+	/* create files */
+	for (int i = 0; i < sizeof(filenames) / sizeof(filenames[0]); i++) {
+		fd = open(filenames[i], O_CREAT | O_RDWR);
+		assert(fd != -1);
+		printf("File created: %s (fd %d)\n", filenames[i], fd);
+		close(fd);
+	}
+
+	char * rfilenames[] = {"/bar", "/foo", "/baz", "/dev_tty0"};
+
+	/* remove files */
+	for (int i = 0; i < sizeof(rfilenames) / sizeof(rfilenames[0]); i++) {
+		if (unlink(rfilenames[i]) == 0)
+			printf("File removed: %s\n", rfilenames[i]);
+		else
+			printf("Failed to remove file: %s\n", rfilenames[i]);
+	}
+
+    spin("TestA");        
+
 }
 
 

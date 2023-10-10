@@ -299,9 +299,8 @@ PRIVATE int msg_send(struct proc* current, int dest, MESSAGE* m) {
 		panic(">>DEADLOCK<< %s->%s", sender->name, p_dest->name);
     }
 
-    if ((p_dest->p_flags & RECEIVING) && /* dest is waiting for the msg */
-	    (p_dest->p_recvfrom == proc2pid(sender) ||
-	     p_dest->p_recvfrom == ANY)) {
+    if ((p_dest->p_flags & RECEIVING) && (p_dest->p_recvfrom == proc2pid(sender)    /* dest is waiting for the msg */
+         || p_dest->p_recvfrom == ANY)) {
 
         assert(p_dest->p_msg);
         assert(m);

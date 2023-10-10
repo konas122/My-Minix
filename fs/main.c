@@ -42,15 +42,15 @@ PUBLIC void task_fs() {
 		case CLOSE:
 			fs_msg.RETVAL = do_close();
 			break;
-		/* case READ: */
-		/* case WRITE: */
-		/* 	fs_msg.CNT = do_rdwt(); */
-		/* 	break; */
+		case READ: 
+		case WRITE:
+			fs_msg.CNT = do_rdwt(); 
+			break; 
+        case UNLINK:
+			fs_msg.RETVAL = do_unlink();
+			break;
 		/* case LSEEK: */
 		/* 	fs_msg.OFFSET = do_lseek(); */
-		/* 	break; */
-		/* case UNLINK: */
-		/* 	fs_msg.RETVAL = do_unlink(); */
 		/* 	break; */
 		/* case RESUME_PROC: */
 		/* 	src = fs_msg.PROC_NR; */
@@ -367,8 +367,9 @@ PRIVATE void read_super_block(int dev) {
         if (super_block[i].sb_dev == NO_DEV)
             break;
     }
-    if (i == NR_SUPER_BLOCK)
+    if (i == NR_SUPER_BLOCK) {
         panic("super_bloc slots used up");
+    }
 
 	assert(i == 0);             /* currently we use only the 1st slot */
 
