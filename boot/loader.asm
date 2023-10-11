@@ -225,8 +225,10 @@ KernelFileName		db	"KERNEL  BIN", 0	; KERNEL.BIN 之文件名
 
 MessageLength		equ	9                   ; 为简化代码, 下面每个字符串的长度均为 MessageLength
 LoadMessage:		db	"Loading  "
-Message1		    db	"Ready.   "
-Message2		    db	"No KERNEL"
+Message1		    db	"         "
+Message2		    db	"Ready.   "
+Message3		    db	"No KERNEL"
+Message4		    db	"Too Large"
 
 
 ; 运行环境:	实模式（保护模式下显示字符串由函数 DispStr 完成）
