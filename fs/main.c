@@ -49,6 +49,9 @@ PUBLIC void task_fs() {
         case UNLINK:
 			fs_msg.RETVAL = do_unlink();
 			break;
+        case RESUME_PROC:
+			src = fs_msg.PROC_NR;
+			break;
 		/* case LSEEK: */
 		/* 	fs_msg.OFFSET = do_lseek(); */
 		/* 	break; */
@@ -71,8 +74,15 @@ PUBLIC void task_fs() {
 		}
 
 		/* reply */
-		fs_msg.type = SYSCALL_RET;
-		send_recv(SEND, src, &fs_msg);
+        if (fs_msg.type != SUSPEND_PROC) {
+		    fs_msg.type = SYSCALL_RET;
+		    send_recv(SEND, src, &fs_msg);
+        }
+        /**
+         *  FS在收到SUSPEND_PROC后，并不像处理完READ或WRITE消息后那样向进程P发送消息，
+         * 而是不理不睬，径自开始下一个消息处理的循环，留下P独自等待。一直到TTY发送
+         * RESUME_PROC消息，FS才会通知P，让其继续运行。
+        */
 	}
 }
 

@@ -95,7 +95,7 @@ PUBLIC int  is_current_console(CONSOLE* p_con);
 
 /* printf.c */
 PUBLIC  int     printf(const char *fmt, ...);
-#define	printl	printf
+PUBLIC  int     printl(const char *fmt, ...);
 
 
 /* vsprintf.c */

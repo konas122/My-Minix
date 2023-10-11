@@ -134,6 +134,9 @@ void assertion_failure(char *exp, char *file, char *base_file, int line);
 #define NO_TASK		(NR_TASKS + NR_PROCS + 20)
 
 
+#define	MAX_TICKS	0x7FFFABCD
+
+
 /* system call */
 #define NR_SYS_CALL	3
 
@@ -160,10 +163,13 @@ enum msgtype {
 	HARD_INT = 1,
 
 	/* SYS task */
-	GET_TICKS, GET_PID, 
+	GET_TICKS, GET_PID,
 
 	/* FS */
 	OPEN, CLOSE, READ, WRITE, LSEEK, STAT, UNLINK,
+
+	/* FS & TTY */
+	SUSPEND_PROC, RESUME_PROC,
 
 	/* TTY, SYS, FS, MM, etc */
 	SYSCALL_RET,
@@ -175,7 +181,7 @@ enum msgtype {
 	DEV_WRITE,
 	DEV_IOCTL,
 
-    /* for debug */
+	/* for debug */
 	DISK_LOG
 };
 

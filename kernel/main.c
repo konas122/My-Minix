@@ -82,7 +82,7 @@ PUBLIC int kernel_main()
 
     proc_table[NR_TASKS + 0].nr_tty = 2;
     proc_table[NR_TASKS + 1].nr_tty = 1;
-    proc_table[NR_TASKS + 2].nr_tty = 1;
+    proc_table[NR_TASKS + 2].nr_tty = 0;
 
     proc_table[2].nr_tty = 2;
     proc_table[3].nr_tty = 2;
@@ -118,11 +118,11 @@ void TestA()
 	// disp_color_str("A.", BRIGHT | MAKE_COLOR(BLACK, RED));
     // disp_int(get_ticks());
 
-    // printf("<Ticks:%d>", get_ticks());
+    // printl("<Ticks:%d>", get_ticks());
     // milli_delay(200);
 
     // int fd = open("/blah", O_CREAT);
-    // printf("fd: %d\n", fd);
+    // printl("fd: %d\n", fd);
     int fd;
 	int n;
 	const char filename[] = "blah";
@@ -135,7 +135,7 @@ void TestA()
 	/* create */
 	fd = open(filename, O_CREAT | O_RDWR);
 	assert(fd != -1);
-	printf("File created. fd: %d\n", fd);
+	printl("File created. fd: %d\n", fd);
 
 	/* write */
 	n = write(fd, bufw, strlen(bufw));
@@ -147,13 +147,13 @@ void TestA()
 	/* open */
 	fd = open(filename, O_RDWR);
 	assert(fd != -1);
-	printf("File opened. fd: %d\n", fd);
+	printl("File opened. fd: %d\n", fd);
 
 	/* read */
 	n = read(fd, bufr, rd_bytes);
 	assert(n == rd_bytes);
 	bufr[n] = 0;
-	printf("%d bytes read: %s\n", n, bufr);
+	printl("%d bytes read: %s\n", n, bufr);
 
 	/* close */
 	close(fd);
@@ -164,7 +164,7 @@ void TestA()
 	for (int i = 0; i < sizeof(filenames) / sizeof(filenames[0]); i++) {
 		fd = open(filenames[i], O_CREAT | O_RDWR);
 		assert(fd != -1);
-		printf("File created: %s (fd %d)\n", filenames[i], fd);
+		printl("File created: %s (fd %d)\n", filenames[i], fd);
 		close(fd);
 	}
 
@@ -173,41 +173,48 @@ void TestA()
 	/* remove files */
 	for (int i = 0; i < sizeof(rfilenames) / sizeof(rfilenames[0]); i++) {
 		if (unlink(rfilenames[i]) == 0)
-			printf("File removed: %s\n", rfilenames[i]);
+			printl("File removed: %s\n", rfilenames[i]);
 		else
-			printf("Failed to remove file: %s\n", rfilenames[i]);
+			printl("Failed to remove file: %s\n", rfilenames[i]);
 	}
 
     spin("TestA");        
-
 }
 
 
 void TestB()
 {
-	int i = 0x0309;
-	while(i--){
-        // disp_int(sys_get_ticks());
-        // disp_color_str("B.", BRIGHT | MAKE_COLOR(BLACK, GREEN));
-        // disp_int(get_ticks());
+	char tty_name[] = "/dev_tty1";
 
-        printf("B");
-        milli_delay(200);
-    }
+	int fd_stdin  = open(tty_name, O_RDWR);
+	assert(fd_stdin  == 0);
+	int fd_stdout = open(tty_name, O_RDWR);
+	assert(fd_stdout == 1);
 
-    while (1) {}
+	char rdbuf[128];
+
+	while (1) {
+		printf("$ ");
+		int r = read(fd_stdin, rdbuf, 70);
+		rdbuf[r] = 0;
+
+		if (strcmp(rdbuf, "hello") == 0)
+			printf("hello world!\n");
+		else
+			if (rdbuf[0])
+				printf("{%s}\n", rdbuf);
+	}
+
+	assert(0); /* never arrive here */
 }
 
 
 void TestC()
 {
 	int i = 0x0400;
-	while(i--){
-        // disp_int(sys_get_ticks());
-        // disp_color_str("C.", BRIGHT | MAKE_COLOR(WHITE, BLUE));
-        // disp_int(get_ticks());
-
-        printf("C");
+    printl("\n\n");
+    while (i--) {
+        printl("C");
         milli_delay(200);
     }
 

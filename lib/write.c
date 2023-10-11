@@ -27,7 +27,7 @@
 PUBLIC int write(int fd, const void *buf, int count) {
     MESSAGE msg;
     msg.type = WRITE;
-    msg.FD = fd;
+    msg.FD  = fd;
     msg.BUF = buf;
     msg.CNT = count;
 

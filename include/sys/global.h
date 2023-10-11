@@ -16,6 +16,12 @@ EXTERN	struct gate		idt[IDT_SIZE];
 EXTERN	u32	k_reenter;
 EXTERN	int	nr_current_console;
 
+EXTERN	int	key_pressed; /**
+			      * used for clock_handler
+			      * to wake up TASK_TTY when
+			      * a key is pressed
+			      */
+                 
 EXTERN	struct tss	tss;
 EXTERN	struct proc*	p_proc_ready;
 

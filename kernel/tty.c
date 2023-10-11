@@ -1,4 +1,5 @@
 #include "type.h"
+#include "stdio.h"
 #include "const.h"
 #include "protect.h"
 #include "string.h"
@@ -15,15 +16,17 @@
 #define TTY_END		(tty_table + NR_CONSOLES)
 
 
-PRIVATE void init_tty(TTY* p_tty);
-PRIVATE void tty_do_read(TTY* p_tty);
-PRIVATE void tty_do_write(TTY* p_tty);
-PRIVATE void put_key(TTY* p_tty, u32 key);
+PRIVATE void    init_tty        (TTY* p_tty);
+PRIVATE void	tty_do_read	    (TTY* tty, MESSAGE* msg);
+PRIVATE void	tty_do_write	(TTY* tty, MESSAGE* msg);
+PRIVATE void    put_key         (TTY* p_tty, u32 key);
+PRIVATE void	tty_dev_read	(TTY* tty);
+PRIVATE void	tty_dev_write	(TTY* tty);
 
 
 PUBLIC void init_tty(TTY* p_tty) {
     p_tty->inbuf_count = 0;
-    p_tty->p_inbuf_head = p_tty->p_inbuf_tail = p_tty->in_buf;
+    p_tty->inbuf_head = p_tty->inbuf_tail = p_tty->in_buf;
 
     init_screen(p_tty);
 }
@@ -31,6 +34,7 @@ PUBLIC void init_tty(TTY* p_tty) {
 
 PUBLIC void task_tty() {
     TTY *   p_tty;
+    MESSAGE msg;
 
     /* panic("in TTY"); */
 	/* assert(0); */
@@ -42,13 +46,52 @@ PUBLIC void task_tty() {
     select_console(0);
     while (1) {
         for (p_tty = TTY_FIRST; p_tty < TTY_END; p_tty++) {
-            tty_do_read(p_tty);
-            tty_do_write(p_tty);
+            do {
+                tty_dev_read(p_tty);    // 从键盘缓冲区读入字符
+                tty_dev_write(p_tty);   // 将字符送入进程P的缓冲区
+            } while (p_tty->inbuf_count);
+        }
+
+        send_recv(RECEIVE, ANY, &msg);
+
+        int src = msg.source;
+        assert(src != TASK_TTY);
+
+        TTY *ptty = &tty_table[msg.DEVICE];
+
+        switch (msg.type) {
+            case DEV_OPEN:
+                reset_msg(&msg);
+                msg.type = SYSCALL_RET;
+                send_recv(SEND, src, &msg);
+                break;
+            case DEV_READ:
+                tty_do_read(ptty, &msg);
+                break;
+            case DEV_WRITE:
+                tty_do_write(ptty, &msg);
+                break;
+            case HARD_INT:
+            /**
+             * waked up by clock_handler -- a key was just pressed
+             * @see clock_handler() inform_int()
+            */
+                key_pressed = 0;
+                continue;
+            default:
+                dump_msg("TTY::unknown msg", &msg);
+			    break;
         }
     }
 }
 
 
+/**
+ * keyboard_read() will invoke this routine after having recognized a key press.
+ * 
+ * @param tty  The key press is for whom.
+ * @param key  The integer key with metadata.
+*/
 PUBLIC void in_process(TTY* p_tty, u32 key) {
 
     if (!(key & FLAG_EXT)) {
@@ -64,12 +107,12 @@ PUBLIC void in_process(TTY* p_tty, u32 key) {
                 break;
             case UP:
                 if ((key & FLAG_SHIFT_L) || (key & FLAG_SHIFT_R)) {
-				    scroll_screen(p_tty->p_console, SCR_DN);
+				    scroll_screen(p_tty->console, SCR_DN);
                 }
 			    break;
             case DOWN:
                 if ((key & FLAG_SHIFT_L) || (key & FLAG_SHIFT_R)) {
-                    scroll_screen(p_tty->p_console, SCR_UP);
+                    scroll_screen(p_tty->console, SCR_UP);
                 }
                 break;
 
@@ -98,59 +141,109 @@ PUBLIC void in_process(TTY* p_tty, u32 key) {
 }
 
 
-PUBLIC void tty_do_read(TTY* p_tty) {
-    if (is_current_console(p_tty->p_console)) {
+/**
+ * Get chars from the keyboard buffer if the TTY::console is the `current'
+ * console.
+ *
+ * @see keyboard_read()
+ * 
+ * @param tty  Ptr to TTY.
+*/ 
+PUBLIC void tty_dev_read(TTY* p_tty) {
+    if (is_current_console(p_tty->console)) {
         keyboard_read(p_tty);
     }
 }
 
 
-PUBLIC void tty_do_write(TTY* p_tty) {
-    if (p_tty->inbuf_count) {
-        char ch = *(p_tty->p_inbuf_tail);
-        p_tty->p_inbuf_tail++;
+/**
+ * Echo the char just pressed and transfer it to the waiting process.
+ * 
+ * @param tty   Ptr to a TTY struct.
+*/
+PUBLIC void tty_dev_write(TTY* tty) {
+    while (tty->inbuf_count) {
+        char ch = *(tty->inbuf_tail);
+        tty->inbuf_tail++;
         // 若键盘处理到缓冲区尾部
-        if (p_tty->p_inbuf_tail == p_tty->in_buf + TTY_IN_BYTES)
-            p_tty->p_inbuf_tail = p_tty->in_buf;
+        if (tty->inbuf_tail == tty->in_buf + TTY_IN_BYTES)
+            tty->inbuf_tail = tty->in_buf;
 
-        p_tty->inbuf_count--;
-        out_char(p_tty->p_console, ch);
+        tty->inbuf_count--;
+
+        if (tty->tty_left_cnt) {
+			if (ch >= ' ' && ch <= '~') { /* printable */
+				out_char(tty->console, ch);
+				void * p = tty->tty_req_buf +
+					   tty->tty_trans_cnt;
+				phys_copy(p, (void *)va2la(TASK_TTY, &ch), 1);
+				tty->tty_trans_cnt++;
+				tty->tty_left_cnt--;
+			}
+			else if (ch == '\b' && tty->tty_trans_cnt) {
+				out_char(tty->console, ch);
+				tty->tty_trans_cnt--;
+				tty->tty_left_cnt++;
+			}
+
+			if (ch == '\n' || tty->tty_left_cnt == 0) {
+				out_char(tty->console, '\n');
+				MESSAGE msg;
+				msg.type = RESUME_PROC;
+				msg.PROC_NR = tty->tty_procnr;
+				msg.CNT = tty->tty_trans_cnt;
+				send_recv(SEND, tty->tty_caller, &msg);
+				tty->tty_left_cnt = 0;
+			}
+		}
     }
 }
 
 
+/**
+ * Put a key into the in-buffer of TTY.
+ *
+ * @callergraph
+ * 
+ * @param tty  To which TTY the key is put.
+ * @param key  The key. It's an integer whose higher 24 bits are metadata.
+*/
 PRIVATE void put_key(TTY* p_tty, u32 key) {
     // 若缓冲区未满
     if (p_tty->inbuf_count < TTY_IN_BYTES) {
-		*(p_tty->p_inbuf_head) = key;
-		p_tty->p_inbuf_head++;
+		*(p_tty->inbuf_head) = key;
+		p_tty->inbuf_head++;
 
        // 若缓冲区已满
-		if (p_tty->p_inbuf_head == p_tty->in_buf + TTY_IN_BYTES) {
-			p_tty->p_inbuf_head = p_tty->in_buf;
+		if (p_tty->inbuf_head == p_tty->in_buf + TTY_IN_BYTES) {
+			p_tty->inbuf_head = p_tty->in_buf;
 		}
 		p_tty->inbuf_count++;
     }
 }
 
 
-PUBLIC void tty_write(TTY* p_tty, char* buf, int len) {
-    char *p = buf;
-    int i = len;
-
-    while (i) {
-        out_char(p_tty->p_console, *p++);
-        i--;
-    }
-}
-
-
-PUBLIC int sys_write(char* buf, int len, struct proc* p_proc) {
-    tty_write(&tty_table[p_proc->nr_tty], buf, len);
-    return 0;
-}
-
-
+/**
+ * System calls accept four parameters. `printx' needs only two, so it wastes
+ * the other two.
+ *
+ * @note `printx' accepts only one parameter -- `char* s', the other one --
+ * `struct proc * proc' -- is pushed by kernel.asm::sys_call so that the
+ * kernel can easily know who invoked the system call.
+ *
+ * @note s[0] (the first char of param s) is a magic char. if it equals
+ * MAG_CH_PANIC, then this syscall was invoked by `panic()', which means
+ * something goes really wrong and the system is to be halted; if it equals
+ * MAG_CH_ASSERT, then this syscall was invoked by `assert()', which means
+ * an assertion failure has occured. @see kernel/main lib/misc.c.
+ * 
+ * @param _unused1  Ignored.
+ * @param _unused2  Ignored.
+ * @param s         The string to be printed.
+ * @param p_proc    Caller proc.
+ * 
+ * @return  Zero if success.
+*/
 PUBLIC int sys_printx(int _unused1, int _unused2, char* s, struct proc* p_proc) {
     const char *p;
     char ch;
@@ -210,7 +303,94 @@ PUBLIC int sys_printx(int _unused1, int _unused2, char* s, struct proc* p_proc) 
 		if (ch == MAG_CH_PANIC || ch == MAG_CH_ASSERT)
 			continue;           /* skip the magic char */
 
-		out_char(tty_table[p_proc->nr_tty].p_console, ch);
+		out_char(tty_table[p_proc->nr_tty].console, ch);
     }
     return 0;
 }
+
+
+/* For debuf only. */
+PUBLIC void dump_tty_buf()
+{
+	TTY * tty = &tty_table[1];
+
+	static char sep[] = "--------------------------------\n";
+
+	printl(sep);
+
+	printl("head: %d\n", tty->inbuf_head - tty->in_buf);
+	printl("tail: %d\n", tty->inbuf_tail - tty->in_buf);
+	printl("cnt: %d\n", tty->inbuf_count);
+
+	int pid = tty->tty_caller;
+	printl("caller: %s (%d)\n", proc_table[pid].name, pid);
+	pid = tty->tty_procnr;
+	printl("caller: %s (%d)\n", proc_table[pid].name, pid);
+
+	printl("req_buf: %d\n", (int)tty->tty_req_buf);
+	printl("left_cnt: %d\n", tty->tty_left_cnt);
+	printl("trans_cnt: %d\n", tty->tty_trans_cnt);
+
+	printl("--------------------------------\n");
+
+	strcpy(sep, "\n");
+}
+
+
+/*****************************************************************************
+ *                                tty_do_read
+ *****************************************************************************/
+/**
+ * Invoked when task TTY receives DEV_READ message.
+ *
+ * @note The routine will return immediately after setting some members of
+ * TTY struct, telling FS to suspend the proc who wants to read. The real
+ * transfer (tty buffer -> proc buffer) is not done here.
+ * 
+ * @param tty  From which TTY the caller proc wants to read.
+ * @param msg  The MESSAGE just received.
+ *****************************************************************************/
+PRIVATE void tty_do_read(TTY* tty, MESSAGE* msg) {
+    // tell the tty:
+    tty->tty_caller     = msg->source;      // who called, usually FS
+    tty->tty_procnr     = msg->PROC_NR;     // who wants the chars
+    tty->tty_req_buf    = va2la(tty->tty_procnr,
+				  msg->BUF);                // where the chars should be put
+    tty->tty_left_cnt    = msg->CNT;         // how many chars are requested
+    tty->tty_trans_cnt  = 0;                // how many chars have been transferred
+
+    msg->type   = SUSPEND_PROC;
+    msg->CNT    = tty->tty_left_cnt;
+    send_recv(SEND, tty->tty_caller, msg);
+}
+
+
+/*****************************************************************************
+ *                                tty_do_write
+ *****************************************************************************/
+/**
+ * Invoked when task TTY receives DEV_WRITE message.
+ * 
+ * @param tty  To which TTY the calller proc is bound.
+ * @param msg  The MESSAGE.
+ *****************************************************************************/
+PRIVATE void tty_do_write(TTY* tty, MESSAGE* msg) {
+    char buf[TTY_OUT_BUF_LEN];
+    char *p = (char *)va2la(msg->PROC_NR, msg->BUF);
+    int i = msg->CNT;
+    int j;
+
+    while (i) {
+        int bytes = min(TTY_OUT_BUF_LEN, i);
+        phys_copy(va2la(TASK_TTY, buf), (void *)p, bytes);
+        for (j = 0; j < bytes; j++)
+            out_char(tty->console, buf[j]);
+        i -= bytes;
+        p += bytes;
+    }
+
+    msg->type = SYSCALL_RET;
+    send_recv(SEND, msg->source, msg);
+}
+
+
