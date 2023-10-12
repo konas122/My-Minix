@@ -14,6 +14,12 @@ typedef struct descriptor
 } DESCRIPTOR;
 
 
+#define	reassembly(high, high_shift, mid, mid_shift, low)	\
+	(((high) << (high_shift)) +				\
+	 ((mid)  << (mid_shift)) +				\
+	 (low))
+
+
 /* 门描述符 */
 typedef struct gate
 {
@@ -95,6 +101,7 @@ typedef struct tss {
 #define	DA_DPL1			0x20	/* DPL = 1				*/
 #define	DA_DPL2			0x40	/* DPL = 2				*/
 #define	DA_DPL3			0x60	/* DPL = 3				*/
+#define	LIMIT_4K_SHIFT	12
 /* 存储段描述符类型值说明 */
 #define	DA_DR			0x90	/* 存在的只读数据段类型值		*/
 #define	DA_DRW			0x92	/* 存在的可读写数据段属性值		*/
@@ -150,6 +157,8 @@ typedef struct tss {
 
 // 宏
 // 线性地址 → 物理地址 
-#define vir2phys(seg_base, vir)	(u32)(((u32)seg_base) + (u32)(vir))
+// #define vir2phys(seg_base, vir)	(u32)(((u32)seg_base) + (u32)(vir))
+/* seg:off -> linear addr */
+#define makelinear(seg,off) (u32)(((u32)(seg2phys(seg))) + (u32)(off))
 
 #endif

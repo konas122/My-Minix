@@ -30,7 +30,7 @@ typedef struct proc {
     int             ticks;              /* remained ticks */
     int             priority;
 
-    u32				pid;			    /* process id passed in from MM */
+    // u32				pid;			    /* process id passed in from MM */
 	char			name[16];		    /* name of the process */
 
     int  p_flags;                       /**
@@ -76,7 +76,10 @@ typedef struct proc {
                                          * 消息队列(链表)的next指针
                                          */
 
-    int nr_tty;
+    // int nr_tty;
+    int p_parent;                       /**< pid of parent process */
+
+	int exit_status;                    /**< for parent */
 
     struct file_desc * filp[NR_FILES];  /** 
                                          * file descriptor 
@@ -97,26 +100,48 @@ typedef struct task {
 
 
 /* Number of tasks & procs */
-#define NR_TASKS	4
-#define NR_PROCS	3
+#define NR_TASKS	5
+#define NR_PROCS	32
+#define NR_NATIVE_PROCS		4               /* 表示有多少个用户进程 */
 #define FIRST_PROC	proc_table[0]
 #define LAST_PROC	proc_table[NR_TASKS + NR_PROCS - 1]
 
+
+/**
+ * All forked proc will use memory above PROCS_BASE.
+ * 
+ * PROCS_BASE定义为0xA00000，也就是将10MB以上的空间给用户进程使用
+ *
+ * @attention make sure PROCS_BASE is higher than any buffers, such as
+ *            fsbuf, mmbuf, etc
+ * @see global.c
+ * @see global.h
+ */
+#define	PROCS_BASE		        0xA00000    /* 10 MB */
+#define	PROC_IMAGE_SIZE_DEFAULT	0x100000    /*  1 MB */
+#define	PROC_ORIGIN_STACK	    0x400       /*  1 KB */
+
+
 /* stacks of tasks */
-#define STACK_SIZE_TTY		0x8000
-#define STACK_SIZE_SYS		0x8000
-#define STACK_SIZE_HD		0x8000
-#define STACK_SIZE_FS		0x8000
-#define STACK_SIZE_TESTA	0x8000
-#define STACK_SIZE_TESTB	0x8000
-#define STACK_SIZE_TESTC	0x8000
+#define	STACK_SIZE_DEFAULT	0x4000 /* 16 KB */
+#define STACK_SIZE_TTY		STACK_SIZE_DEFAULT
+#define STACK_SIZE_SYS		STACK_SIZE_DEFAULT
+#define STACK_SIZE_HD		STACK_SIZE_DEFAULT
+#define STACK_SIZE_FS		STACK_SIZE_DEFAULT
+#define STACK_SIZE_MM		STACK_SIZE_DEFAULT
+#define STACK_SIZE_INIT		STACK_SIZE_DEFAULT
+#define STACK_SIZE_TESTA	STACK_SIZE_DEFAULT
+#define STACK_SIZE_TESTB	STACK_SIZE_DEFAULT
+#define STACK_SIZE_TESTC	STACK_SIZE_DEFAULT
 
 #define STACK_SIZE_TOTAL	(STACK_SIZE_TTY + \
-				STACK_SIZE_SYS + \
-				STACK_SIZE_HD + \
-				STACK_SIZE_FS + \
-				STACK_SIZE_TESTA + \
-				STACK_SIZE_TESTB + \
+				STACK_SIZE_SYS      +\
+				STACK_SIZE_HD       + \
+				STACK_SIZE_FS       + \
+				STACK_SIZE_MM       + \
+				STACK_SIZE_INIT     + \
+				STACK_SIZE_TESTA    + \
+				STACK_SIZE_TESTB    + \
 				STACK_SIZE_TESTC)
 
 

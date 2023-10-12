@@ -12,7 +12,6 @@
 
 /* 本文件内函数声明 */
 PRIVATE void init_idt_desc(unsigned char vector, u8 desc_type, int_handler handler, unsigned char privilege);
-PRIVATE void init_descriptor(struct descriptor * p_desc, u32 base, u32 limit, u16 attribute);
 
 /* 中断处理函数 */
 void	divide_error();
@@ -49,6 +48,7 @@ void    hwint14();
 void    hwint15();
 
 
+/* 初始化 IDT */
 PUBLIC void init_prot()
 {
 	init_8259A();
@@ -97,23 +97,22 @@ PUBLIC void init_prot()
 
     init_descriptor(
         &gdt[INDEX_TSS],
-        vir2phys(seg2phys(SELECTOR_KERNEL_DS), &tss),
+        makelinear(seg2phys(SELECTOR_KERNEL_DS), &tss),
         sizeof(tss) - 1,
         DA_386TSS
     );
     tss.iobase = sizeof(tss);   // 无I/O许可位图
 
     // 填充 GDT 中进程的 LDT 的描述符
-    struct proc *p_proc = proc_table;
-    u16 selector_ldt = INDEX_LDT_FIRST << 3;
     for (int i = 0; i < NR_TASKS + NR_PROCS; i++) {
-        init_descriptor(
-            &gdt[selector_ldt >> 3],
-            vir2phys(seg2phys(SELECTOR_KERNEL_DS), proc_table[i].ldts),
-            LDT_SIZE * sizeof(struct descriptor) - 1,
-            DA_LDT);
-        p_proc++;
-        selector_ldt += 1 << 3;
+        memset(&proc_table[i], 0, sizeof(struct proc));
+
+        proc_table[i].ldt_sel = SELECTOR_LDT_FIRST + (i << 3);
+        assert(INDEX_LDT_FIRST + i < GDT_SIZE);
+        init_descriptor(&gdt[INDEX_LDT_FIRST + i],
+                        makelinear(SELECTOR_KERNEL_DS, proc_table[i].ldts),
+                        LDT_SIZE * sizeof(struct descriptor) - 1,
+                        DA_LDT);
     }
 }
 
@@ -133,13 +132,13 @@ PRIVATE void init_idt_desc(unsigned char vector, u8 desc_type,
 
 
 // 初始化段描述符
-PRIVATE void init_descriptor(struct descriptor * p_desc, u32 base, u32 limit, u16 attribute)
+PUBLIC void init_descriptor(struct descriptor * p_desc, u32 base, u32 limit, u16 attribute)
 {
 	p_desc->limit_low		= limit & 0x0FFFF;		    // 段界限 1		(2 字节)
 	p_desc->base_low		= base & 0x0FFFF;		    // 段基址 1		(2 字节)
 	p_desc->base_mid		= (base >> 16) & 0x0FF;		// 段基址 2		(1 字节)
 	p_desc->attr1			= attribute & 0xFF;		    // 属性 1
-	p_desc->limit_high_attr2	= ((limit >> 16) & 0x0F) | ((attribute >> 8) & 0xF0);
+	p_desc->limit_high_attr2= ((limit >> 16) & 0x0F) | ((attribute >> 8) & 0xF0);
                                                         // 段界限 2 + 属性 2
 	p_desc->base_high		= (base >> 24) & 0x0FF;		// 段基址 3		(1 字节)
 }
@@ -153,6 +152,7 @@ PUBLIC u32 seg2phys(u16 seg) {
 }
 
 
+// 异常处理
 PUBLIC void exception_handler(int vec_no,int err_code,int eip,int cs,int eflags)
 {
     int i;
@@ -202,3 +202,4 @@ PUBLIC void exception_handler(int vec_no,int err_code,int eip,int cs,int eflags)
 		disp_int(err_code);
 	}
 }
+

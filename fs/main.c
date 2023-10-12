@@ -20,13 +20,14 @@ struct part_info {
 PRIVATE void init_fs();
 PRIVATE void mkfs();
 PRIVATE void read_super_block(int dev);
+PRIVATE int fs_fork();
 
 
 /**
  *  <Ring 1> The main loop of TASK FS. 
 */
 PUBLIC void task_fs() {
-    printl("Task FS begins.\n");
+    printl("{FS} Task FS begins.\n");
 	init_fs();
 
     while (1) {
@@ -42,27 +43,24 @@ PUBLIC void task_fs() {
 		case CLOSE:
 			fs_msg.RETVAL = do_close();
 			break;
-		case READ: 
+		case READ:
 		case WRITE:
-			fs_msg.CNT = do_rdwt(); 
-			break; 
-        case UNLINK:
+			fs_msg.CNT = do_rdwt();
+			break;
+		case UNLINK:
 			fs_msg.RETVAL = do_unlink();
 			break;
-        case RESUME_PROC:
+		case RESUME_PROC:
 			src = fs_msg.PROC_NR;
 			break;
+		case FORK:
+			fs_msg.RETVAL = fs_fork();
+			break;
+		// case EXIT:
+		// 	fs_msg.RETVAL = fs_exit();
+		// 	break;
 		/* case LSEEK: */
 		/* 	fs_msg.OFFSET = do_lseek(); */
-		/* 	break; */
-		/* case RESUME_PROC: */
-		/* 	src = fs_msg.PROC_NR; */
-		/* 	break; */
-		/* case FORK: */
-		/* 	fs_msg.RETVAL = fs_fork(); */
-		/* 	break; */
-		/* case EXIT: */
-		/* 	fs_msg.RETVAL = fs_exit(); */
 		/* 	break; */
 		/* case STAT: */
 		/* 	fs_msg.RETVAL = do_stat(); */
@@ -171,7 +169,7 @@ PRIVATE void mkfs()
     // INVALID_DRIVER:  -20
 	send_recv(BOTH, dd_map[MAJOR(ROOT_DEV)].driver_nr, &driver_msg);
 
-	printl("dev size: 0x%x sectors\n", geo.size);
+	printl("{FS} dev size: 0x%x sectors\n", geo.size);
 
 	/************************/
 	/*      super block     */
@@ -209,7 +207,7 @@ PRIVATE void mkfs()
 	/* write the super block */
 	WR_SECT(ROOT_DEV, 1);
 
-	printl("devbase:0x%x00, sb:0x%x00, imap:0x%x00, smap:0x%x00\n"
+	printl("{FS} devbase:0x%x00, sb:0x%x00, imap:0x%x00, smap:0x%x00\n"
 	       "        inodes:0x%x00, 1st_sector:0x%x00\n", 
 	       geo.base * 2,
 	       (geo.base + 1) * 2,
@@ -523,3 +521,27 @@ PUBLIC void sync_inode(struct inode * p) {
  * 这个i-node，它就变成一个空项了。
  * 
 */
+
+
+/*****************************************************************************
+ *                                fs_fork
+ *****************************************************************************/
+/**
+ * Perform the aspects of fork() that relate to files.
+ * 
+ * @return Zero if success, otherwise a negative integer.
+ *****************************************************************************/
+PRIVATE int fs_fork()
+{
+	int i;
+	struct proc* child = &proc_table[fs_msg.PID];
+	for (i = 0; i < NR_FILES; i++) {
+		if (child->filp[i]) {
+			child->filp[i]->fd_cnt++;
+			child->filp[i]->fd_inode->i_cnt++;
+		}
+	}
+
+	return 0;
+}
+

@@ -8,10 +8,10 @@ EXTERN	int	ticks;
 
 EXTERN	int	disp_pos;
 
-EXTERN	u8			gdt_ptr[6];	/* 0~15:Limit  16~47:Base */
+EXTERN	u8			        gdt_ptr[6]; /* 0~15:Limit  16~47:Base */
 EXTERN	struct descriptor	gdt[GDT_SIZE];
-EXTERN	u8			idt_ptr[6];	/* 0~15:Limit  16~47:Base */
-EXTERN	struct gate		idt[IDT_SIZE];
+EXTERN	u8			        idt_ptr[6];	/* 0~15:Limit  16~47:Base */
+EXTERN	struct gate		    idt[IDT_SIZE];
 
 EXTERN	u32	k_reenter;
 EXTERN	int	nr_current_console;
@@ -45,3 +45,16 @@ EXTERN	struct proc *		pcaller;
 EXTERN	struct inode *		root_inode;
 extern	struct dev_drv_map	dd_map[];
 
+
+/* MM */
+EXTERN	MESSAGE			mm_msg;
+extern	u8 *			mmbuf;
+extern	const int		MMBUF_SIZE;
+EXTERN	int			    memory_size;
+
+
+/* for test only */
+extern	char *			logbuf;
+extern	const int		LOGBUF_SIZE;
+extern	char *			logdiskbuf;
+extern	const int		LOGDISKBUF_SIZE;

@@ -25,10 +25,11 @@ OBJS		= kernel/kernel.o lib/syscall.o kernel/start.o kernel/main.o\
 			kernel/clock.o kernel/keyboard.o kernel/tty.o kernel/console.o\
 			kernel/i8259.o kernel/global.o kernel/protect.o kernel/proc.o\
 			kernel/systask.o kernel/hd.o\
-			lib/printf.o lib/vsprintf.o\
+			lib/printf.o lib/vsprintf.o lib/getpid.o lib/fork.o\
 			lib/kliba.o lib/klib.o lib/string.o lib/misc.o lib/unlink.o\
 			lib/open.o lib/read.o lib/write.o lib/close.o\
-			fs/main.o fs/open.o fs/misc.o fs/read_write.o fs/link.o
+			fs/main.o fs/open.o fs/misc.o fs/read_write.o fs/link.o\
+			mm/main.o mm/forkexit.o
 DASMOUTPUT	= kernel.bin.asm
 
 # All Phony Targets
@@ -145,6 +146,12 @@ lib/close.o: lib/close.c
 lib/unlink.o: lib/unlink.c
 	$(CC) $(CFLAGS) -o $@ $<
 
+lib/getpid.o: lib/getpid.c
+	$(CC) $(CFLAGS) -o $@ $<
+
+lib/fork.o: lib/fork.c
+	$(CC) $(CFLAGS) -o $@ $<
+
 fs/main.o: fs/main.c
 	$(CC) $(CFLAGS) -o $@ $<
 
@@ -160,3 +167,8 @@ fs/misc.o: fs/misc.c
 fs/link.o: fs/link.c
 	$(CC) $(CFLAGS) -o $@ $<
 
+mm/main.o: mm/main.c
+	$(CC) $(CFLAGS) -o $@ $<
+
+mm/forkexit.o: mm/forkexit.c
+	$(CC) $(CFLAGS) -o $@ $<
