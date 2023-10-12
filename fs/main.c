@@ -116,7 +116,10 @@ PRIVATE void init_fs()
     */
 	driver_msg.type = DEV_OPEN;
 	driver_msg.DEVICE = MINOR(ROOT_DEV);
+    // MINOR(ROOT_DEV): ((3 << 8) | 0x21) & 0xFF
 	assert(dd_map[MAJOR(ROOT_DEV)].driver_nr != INVALID_DRIVER);
+    // MAJOR(ROOT_DEV): (((3 << 8) | 0x21) >> 8) & 0xFF
+    // INVALID_DRIVER:  -20
 	send_recv(BOTH, dd_map[MAJOR(ROOT_DEV)].driver_nr, &driver_msg);
 
     /* make FS */
@@ -129,14 +132,9 @@ PRIVATE void init_fs()
 	assert(sb->magic == MAGIC_V1);
 
 	root_inode = get_inode(ROOT_DEV, ROOT_INODE);    
+    // ROOT_DEV:    (3 << 8) | 0x21
+    // ROOT_INODE:  3
 }
-
-
-
-
-
-
-
 
 
 
@@ -155,19 +153,22 @@ PRIVATE void mkfs()
 	MESSAGE driver_msg;
 	int i, j;
 
+    // bits_per_sect每扇区有多少位:  512 * 8 
 	int bits_per_sect = SECTOR_SIZE * 8;    /* 8 bits per byte */
 
 	/**
      *  get the geometry of ROOTDEV 
      * 获取ROOT_DEV起始扇区和大小的工作是由向硬盘驱动发送DEV_IOCTL来完成的
     */
-	struct part_info geo;
+	struct part_info    geo;
 	driver_msg.type		= DEV_IOCTL;
 	driver_msg.DEVICE	= MINOR(ROOT_DEV);
 	driver_msg.REQUEST	= DIOCTL_GET_GEO;
 	driver_msg.BUF		= &geo;
 	driver_msg.PROC_NR	= TASK_FS;
 	assert(dd_map[MAJOR(ROOT_DEV)].driver_nr != INVALID_DRIVER);
+    // MAJOR(ROOT_DEV): (((3 << 8) | 0x21) >> 8) & 0xFF
+    // INVALID_DRIVER:  -20
 	send_recv(BOTH, dd_map[MAJOR(ROOT_DEV)].driver_nr, &driver_msg);
 
 	printl("dev size: 0x%x sectors\n", geo.size);
@@ -176,25 +177,33 @@ PRIVATE void mkfs()
 	/*      super block     */
 	/************************/
 	struct super_block sb;
-	sb.magic	  = MAGIC_V1;
+	sb.magic	    = MAGIC_V1;
+    // inode数量
 	sb.nr_inodes	  = bits_per_sect;
+    // inode所占用的扇区数
 	sb.nr_inode_sects = sb.nr_inodes * INODE_SIZE / SECTOR_SIZE;
-	sb.nr_sects	      = geo.size;   /* partition size in sector */
+	sb.nr_sects	      = geo.size;           /* partition size in sector */
+    // inode-map占用的扇区数
 	sb.nr_imap_sects  = 1;
+    // sector-map占用的扇区数
 	sb.nr_smap_sects  = sb.nr_sects / bits_per_sect + 1;
-	sb.n_1st_sect	  = 1 + 1 +     /* boot sector & super block */
+	sb.n_1st_sect	  = 1 + 1 +             /* boot sector & super block */
 		sb.nr_imap_sects + sb.nr_smap_sects + sb.nr_inode_sects;
-	sb.root_inode	  = ROOT_INODE;
-	sb.inode_size	  = INODE_SIZE;
+    // 第一个数据扇区数 = boot-sector + super-block + inode-map扇区数 + sector-map扇区数 + inode所占扇区数
+
+	sb.root_inode	  = ROOT_INODE;         // ROOT_INODE:  1
+	sb.inode_size	  = INODE_SIZE;         // INODE_SIZE:  32
+
 	struct inode x;
 	sb.inode_isize_off  = (int)&x.i_size - (int)&x;
 	sb.inode_start_off  = (int)&x.i_start_sect - (int)&x;
 	sb.dir_ent_size	    = DIR_ENTRY_SIZE;
+
 	struct dir_entry de;
 	sb.dir_ent_inode_off = (int)&de.inode_nr - (int)&de;
-	sb.dir_ent_fname_off = (int)&de.name - (int)&de;
+    sb.dir_ent_fname_off = (int)&de.name - (int)&de;
 
-	memset(fsbuf, 0x90, SECTOR_SIZE);
+    memset(fsbuf, 0x90, SECTOR_SIZE);
 	memcpy(fsbuf, &sb, SUPER_BLOCK_SIZE);
 
 	/* write the super block */
@@ -296,15 +305,8 @@ PRIVATE void mkfs()
  *  - 建立inode-map
  *  - 建立sector-map
  *  - 写入inode_array
- *  - 建立根目录文件
+ *  - 建立根目录文件 "/"
 */
-
-
-
-
-
-
-
 
 
 
@@ -337,14 +339,6 @@ PUBLIC int rw_sector(int io_type, int dev, u64 pos, int bytes, int proc_nr,
 
     return 0;
 }
-
-
-
-
-
-
-
-
 
 
 
@@ -417,14 +411,6 @@ PUBLIC struct super_block * get_super_block(int dev)
 /**
  * `get_super_block()`可以得到给定设备的super-block指针
 */
-
-
-
-
-
-
-
-
 
 
 

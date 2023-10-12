@@ -61,21 +61,21 @@ struct dev_drv_map {
  * \enddot
  */
 struct super_block {
-	u32	magic;		    /**< Magic number */
-	u32	nr_inodes;	    /**< How many inodes */
-	u32	nr_sects;	    /**< How many sectors (including bit maps) */
-	u32	nr_imap_sects;	/**< How many inode-map sectors */
-	u32	nr_smap_sects;  /**< How many sector-map sectors */
-	u32	n_1st_sect;	    /**< Number of the 1st data sector */
+	u32	magic;		        /**< Magic number */
+	u32	nr_inodes;	        /**< How many inodes */
+	u32	nr_sects;	        /**< How many sectors (including bit maps) */
+	u32	nr_imap_sects;	    /**< How many inode-map sectors */
+	u32	nr_smap_sects;      /**< How many sector-map sectors */
+	u32	n_1st_sect;         /**< Number of the 1st data sector */
 
-	u32	nr_inode_sects;   /**< How many inode sectors */
-	u32	root_inode;       /**< Inode nr of root directory */
-	u32	inode_size;       /**< INODE_SIZE */
-	u32	inode_isize_off;  /**< Offset of `struct inode::i_size' */
-	u32	inode_start_off;  /**< Offset of `struct inode::i_start_sect' */
-	u32	dir_ent_size;     /**< DIR_ENTRY_SIZE */
-	u32	dir_ent_inode_off;/**< Offset of `struct dir_entry::inode_nr' */
-	u32	dir_ent_fname_off;/**< Offset of `struct dir_entry::name' */
+	u32	nr_inode_sects;     /**< How many inode sectors */
+	u32	root_inode;         /**< Inode nr of root directory */
+	u32	inode_size;         /**< INODE_SIZE */
+	u32	inode_isize_off;    /**< Offset of `struct inode::i_size' */
+	u32	inode_start_off;    /**< Offset of `struct inode::i_start_sect' */
+	u32	dir_ent_size;       /**< DIR_ENTRY_SIZE */
+	u32	dir_ent_inode_off;  /**< Offset of `struct dir_entry::inode_nr' */
+	u32	dir_ent_fname_off;  /**< Offset of `struct dir_entry::name' */
 
 	/*
 	 * the following item(s) are only present in memory
@@ -170,6 +170,8 @@ struct dir_entry {
 
 
 /**
+ * 文件描述符
+ * 
  * @struct file_desc
  * @brief  File Descriptor
  */

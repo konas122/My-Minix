@@ -17,11 +17,11 @@ PRIVATE void	hd_close		(int device);
 PRIVATE void	hd_rdwt			(MESSAGE * p);
 PRIVATE void	hd_ioctl		(MESSAGE * p);
 PRIVATE void	hd_cmd_out		(struct hd_cmd* cmd);
-PRIVATE void	get_part_table		(int drive, int sect_nr, struct part_ent * entry);
+PRIVATE void	get_part_table	(int drive, int sect_nr, struct part_ent * entry);
 PRIVATE void	partition		(int device, int style);
-PRIVATE void	print_hdinfo		(struct hd_info * hdi);
+PRIVATE void	print_hdinfo	(struct hd_info * hdi);
 PRIVATE int	    waitfor			(int mask, int val, int timeout);
-PRIVATE void	interrupt_wait		();
+PRIVATE void	interrupt_wait	();
 PRIVATE	void	hd_identify		(int drive);
 PRIVATE void	print_identify_info	(u16* hdinfo);
 
@@ -217,12 +217,14 @@ PRIVATE void hd_close(int device)
 /**
  * <Ring 1> This routine handles the DEV_IOCTL message.
  * 
+ * 获取ROOT_DEV起始扇区和大小
+ * 
  * @param p  Ptr to the MESSAGE.
  *****************************************************************************/
 PRIVATE void hd_ioctl(MESSAGE * p)
 {
-	int device = p->DEVICE;
-	int drive = DRV_OF_DEV(device);
+	int device = p->DEVICE;         // 获取设备号
+	int drive = DRV_OF_DEV(device); // 获取驱动编号
 
 	struct hd_info * hdi = &hd_info[drive];
 
@@ -230,11 +232,18 @@ PRIVATE void hd_ioctl(MESSAGE * p)
 	if (p->REQUEST == DIOCTL_GET_GEO) {
 		void * dst = va2la(p->PROC_NR, p->BUF);
 		void * src = va2la(TASK_HD,
-				   device < MAX_PRIM ?
+        /* 用于判断是主分区(primary)还是逻辑分区(logical) */
+				   device < MAX_PRIM ?      
 				   &hdi->primary[device] :
 				   &hdi->logical[(device - MINOR_hd1a) %
-						NR_SUB_PER_DRIVE]);
+						NR_SUB_PER_DRIVE]); /**
+         *  MAX_PRIM: (MAX_DRIVES * NR_PRIM_PER_DRIVE - 1)
+         * Defines the max minor number of the primary partitions.
+         * If there are 2 disks, prim_dev ranges in hd[0-9], this macro will
+         * equals 9.
+         */
 
+        // 将硬盘分区信息（part_info）复制到调用者提供的缓冲区
 		phys_copy(dst, src, sizeof(struct part_info));
 	}
 	else {
