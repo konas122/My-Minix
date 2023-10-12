@@ -21,6 +21,7 @@ PRIVATE void init_fs();
 PRIVATE void mkfs();
 PRIVATE void read_super_block(int dev);
 PRIVATE int fs_fork();
+PRIVATE int fs_exit();
 
 
 /**
@@ -56,9 +57,9 @@ PUBLIC void task_fs() {
 		case FORK:
 			fs_msg.RETVAL = fs_fork();
 			break;
-		// case EXIT:
-		// 	fs_msg.RETVAL = fs_exit();
-		// 	break;
+		case EXIT:
+			fs_msg.RETVAL = fs_exit();
+			break;
 		/* case LSEEK: */
 		/* 	fs_msg.OFFSET = do_lseek(); */
 		/* 	break; */
@@ -544,4 +545,31 @@ PRIVATE int fs_fork()
 
 	return 0;
 }
+
+
+/*****************************************************************************
+ *                                fs_exit
+ *****************************************************************************/
+/**
+ * Perform the aspects of exit() that relate to files.
+ * 
+ * @return Zero if success.
+ *****************************************************************************/
+PRIVATE int fs_exit()
+{
+	int i;
+	struct proc* p = &proc_table[fs_msg.PID];
+	for (i = 0; i < NR_FILES; i++) {
+		if (p->filp[i]) {
+			/* release the inode */
+			p->filp[i]->fd_inode->i_cnt--;
+			/* release the file desc slot */
+			if (--p->filp[i]->fd_cnt == 0)
+				p->filp[i]->fd_inode = 0;
+			p->filp[i] = 0;
+		}
+	}
+	return 0;
+}
+
 

@@ -34,8 +34,8 @@ PUBLIC void clock_handler(int irq) {
         // disp_str("!");
         return;
     }
-    // if (p_proc_ready->ticks > 0)
-    //     return;
+    if (p_proc_ready->ticks > 0)
+        return;
 
     // p_proc_ready++;
     // if (p_proc_ready >= proc_table + NR_TASKS)

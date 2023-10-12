@@ -63,9 +63,9 @@ void assertion_failure(char *exp, char *file, char *base_file, int line);
 /* Process */
 #define SENDING   0x02	        /* set when proc trying to send */
 #define RECEIVING 0x04	        /* set when proc trying to recv */
-#define WAITING   0x08	/* set when proc waiting for the child to terminate */
-#define HANGING   0x10	/* set when proc exits without being waited by parent */
-#define FREE_SLOT 0x20	/* set when proc table entry is not used
+#define WAITING   0x08	        /* set when proc waiting for the child to terminate */
+#define HANGING   0x10	        /* set when proc exits without being waited by parent */
+#define FREE_SLOT 0x20	        /* set when proc table entry is not used
 			 * (ok to allocated to a new process)
 			 */
 

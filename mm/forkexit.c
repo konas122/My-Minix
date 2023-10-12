@@ -12,6 +12,9 @@
 #include "proto.h"
 
 
+PRIVATE void cleanup(struct proc * proc);
+
+
 /*****************************************************************************
  *                                do_fork
  *****************************************************************************/
@@ -140,3 +143,202 @@ PUBLIC int do_fork() {
 
 	return 0;
 }
+
+
+
+/*****************************************************************************
+ *                                do_exit
+ *****************************************************************************/
+/**
+ * Perform the exit() syscall.
+ *
+ * If proc A calls exit(), then MM will do the following in this routine:
+ *     <1> inform FS so that the fd-related things will be cleaned up
+ *     <2> free A's memory
+ *     <3> set A.exit_status, which is for the parent
+ *     <4> depends on parent's status. if parent (say P) is:
+ *           (1) WAITING
+ *                 - clean P's WAITING bit, and
+ *                 - send P a message to unblock it
+ *                 - release A's proc_table[] slot
+ *           (2) not WAITING
+ *                 - set A's HANGING bit
+ *     <5> iterate proc_table[], if proc B is found as A's child, then:
+ *           (1) make INIT the new parent of B, and
+ *           (2) if INIT is WAITING and B is HANGING, then:
+ *                 - clean INIT's WAITING bit, and
+ *                 - send INIT a message to unblock it
+ *                 - release B's proc_table[] slot
+ *               else
+ *                 if INIT is WAITING but B is not HANGING, then
+ *                     - B will call exit()
+ *                 if B is HANGING but INIT is not WAITING, then
+ *                     - INIT will call wait()
+ *
+ * TERMs:
+ *     - HANGING: everything except the proc_table entry has been cleaned up.
+ *     - WAITING: a proc has at least one child, and it is waiting for the
+ *                child(ren) to exit()
+ *     - zombie: say P has a child A, A will become a zombie if
+ *         - A exit(), and
+ *         - P does not wait(), neither does it exit(). that is to say, P just
+ *           keeps running without terminating itself or its child
+ * 
+ * @param status  Exiting status for parent.
+ * 
+ *****************************************************************************/
+PUBLIC void do_exit(int status) {
+    int i;
+    int pid = mm_msg.source;    // PID of caller
+    int parent_pid = proc_table[pid].p_parent;
+    struct proc *p = &proc_table[pid];
+
+    // tell FS, see fs_exit()
+    MESSAGE msg2fs;
+    msg2fs.type = EXIT;
+    msg2fs.PID = pid;
+    send_recv(BOTH, TASK_FS, &msg2fs);
+
+    free_mem(pid);
+
+    p->exit_status = status;
+
+    if (proc_table[parent_pid].p_flags & WAITING) { /* parent is waiting */
+		proc_table[parent_pid].p_flags &= ~WAITING;
+		cleanup(&proc_table[pid]);
+	}
+    else { /* parent is not waiting */
+		proc_table[pid].p_flags |= HANGING;
+	}
+
+    /* if the proc has any child, make INIT the new parent */
+	for (i = 0; i < NR_TASKS + NR_PROCS; i++) {
+		if (proc_table[i].p_parent == pid) { /* is a child */
+			proc_table[i].p_parent = INIT;
+			if ((proc_table[INIT].p_flags & WAITING) &&
+			    (proc_table[i].p_flags & HANGING)) {
+				proc_table[INIT].p_flags &= ~WAITING;
+				cleanup(&proc_table[i]);
+			}
+		}
+	}
+}
+
+
+/*****************************************************************************
+ *                                cleanup
+ *****************************************************************************/
+/**
+ * Do the last jobs to clean up a proc thoroughly:
+ *     - Send proc's parent a message to unblock it, and
+ *     - release proc's proc_table[] entry
+ * 
+ * @param proc  Process to clean up.
+ *****************************************************************************/
+PRIVATE void cleanup(struct proc * proc)
+{
+	MESSAGE msg2parent;
+	msg2parent.type = SYSCALL_RET;
+	msg2parent.PID = proc2pid(proc);
+	msg2parent.STATUS = proc->exit_status;
+	send_recv(SEND, proc->p_parent, &msg2parent);
+
+	proc->p_flags = FREE_SLOT;
+}
+
+
+/*****************************************************************************
+ *                                do_wait
+ *****************************************************************************/
+/**
+ * Perform the wait() syscall.
+ *
+ * If proc P calls wait(), then MM will do the following in this routine:
+ *     <1> iterate proc_table[],
+ *         if proc A is found as P's child and it is HANGING
+ *           - reply to P (cleanup() will send P a messageto unblock it)
+ *           - release A's proc_table[] entry
+ *           - return (MM will go on with the next message loop)
+ *     <2> if no child of P is HANGING
+ *           - set P's WAITING bit
+ *     <3> if P has no child at all
+ *           - reply to P with error
+ *     <4> return (MM will go on with the next message loop)
+ *
+ *****************************************************************************/
+PUBLIC void do_wait()
+{
+	int pid = mm_msg.source;
+
+	int i;
+	int children = 0;
+	struct proc* p_proc = proc_table;
+	for (i = 0; i < NR_TASKS + NR_PROCS; i++,p_proc++) {
+		if (p_proc->p_parent == pid) {
+			children++;
+			if (p_proc->p_flags & HANGING) {
+				cleanup(p_proc);
+				return;
+			}
+		}
+	}
+
+	if (children) {
+		/* has children, but no child is HANGING */
+		proc_table[pid].p_flags |= WAITING;
+	}
+	else {
+		/* no child at all */
+		MESSAGE msg;
+		msg.type = SYSCALL_RET;
+		msg.PID = NO_TASK;
+		send_recv(SEND, pid, &msg);
+	}
+}
+
+
+
+
+
+/***
+ *  想象得出，`do_exit()/do_wait()`跟`msg_send/msg_receive`这两对函数是
+ * 有点类似的，它们最终都是实现了一次“握手”。
+ * 
+ * 假设进程P有子进程A，当A调用exit()，那么MM将会：
+ *  1. 告诉FS：A退出，请做出相应处理
+ *  2. 释放A占用的内存
+ *  3. 判断P是否在WAITING
+ *      · 如果是：
+ *          - 清除P的WAITING位
+ *          - 向P发送消息已解除阻塞（到此P的wait()函数结束）
+ *          - 释放A进程表项（至此A的exit()函数结束）
+ *      · 如果否：
+ *          - 设置A的HANGING位
+ *  4. 遍历proc_table[]，若发现A有子进程B，那么：
+ *      · 将Init进程设置为B的父进程（将B过继给Init）
+ *      · 判断是否满足Init正在WAITING且B正在HANGING：
+ *          - 如果是：
+ *              * 清除Init的WAITING位
+ *              * 向Init发送消息以解除阻塞（到此Init的wait()函数结束）
+ *              * 释放B的进程表项（至此B的exit()函数结束）
+ *          - 如果否：
+ *              * 如果Init正在WAITING但B并没有HANGING，那么“握手”会在将来B调用exit()时结束
+ *              * 如果B正在HANGING但Init并没有WAITING，那么“握手”会在将来Init调用wait()时发生
+ * 
+ * 若P调用wait()，那么MM将会：
+ *  1. 遍历proc_table[]，如果发现A是P的子进程，并且它正在HANGING，那么：
+ *      - 向P发送消息以解除阻塞（至此P的wait()函数结束）
+ *      - 释放A的进程表项（至此A的exit()函数结束）
+ *  2. 如果P的子进程没有一个在HANGING，则：
+ *      - 设P的WAITING位
+ *  3. 如果P压根儿没有子进程，则：
+ *      - 向P发送消息，消息携带一个表示出差的返回值（至此P的wait()结束）
+*/
+
+/**
+ *  如果一个进程X被置为HANGING位，那么X所在的资源除了exit_status外，全被释放。
+ * exit_status记录了X的返回值，只有当X的父进程通过调用wait()取走这个返回值，
+ * X进程才会被完全释放。
+ * 
+ *  如果一个进程Y被置了WAITING位，意味着Y至少有一个子进程，并且正在等待某个子进程退出。
+*/

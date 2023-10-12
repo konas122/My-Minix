@@ -25,9 +25,10 @@ OBJS		= kernel/kernel.o lib/syscall.o kernel/start.o kernel/main.o\
 			kernel/clock.o kernel/keyboard.o kernel/tty.o kernel/console.o\
 			kernel/i8259.o kernel/global.o kernel/protect.o kernel/proc.o\
 			kernel/systask.o kernel/hd.o\
-			lib/printf.o lib/vsprintf.o lib/getpid.o lib/fork.o\
+			lib/printf.o lib/vsprintf.o lib/getpid.o\
 			lib/kliba.o lib/klib.o lib/string.o lib/misc.o lib/unlink.o\
 			lib/open.o lib/read.o lib/write.o lib/close.o\
+			lib/fork.o lib/exit.o lib/wait.o\
 			fs/main.o fs/open.o fs/misc.o fs/read_write.o fs/link.o\
 			mm/main.o mm/forkexit.o
 DASMOUTPUT	= kernel.bin.asm
@@ -150,6 +151,12 @@ lib/getpid.o: lib/getpid.c
 	$(CC) $(CFLAGS) -o $@ $<
 
 lib/fork.o: lib/fork.c
+	$(CC) $(CFLAGS) -o $@ $<
+
+lib/exit.o: lib/exit.c
+	$(CC) $(CFLAGS) -o $@ $<
+
+lib/wait.o: lib/wait.c
 	$(CC) $(CFLAGS) -o $@ $<
 
 fs/main.o: fs/main.c

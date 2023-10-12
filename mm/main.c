@@ -35,17 +35,17 @@ PUBLIC void task_mm() {
 		case FORK:
 			mm_msg.RETVAL = do_fork();
 			break;
-		// case EXIT:
-		// 	do_exit(mm_msg.STATUS);
-		// 	reply = 0;
-		// 	break;
-		// /* case EXEC: */
-		// /* 	mm_msg.RETVAL = do_exec(); */
-		// /* 	break; */
-		// case WAIT:
-		// 	do_wait();
-		// 	reply = 0;
-		// 	break;
+		case EXIT:
+			do_exit(mm_msg.STATUS);
+			reply = 0;
+			break;
+		/* case EXEC: */
+		/* 	mm_msg.RETVAL = do_exec(); */
+		/* 	break; */
+		case WAIT:
+			do_wait();
+			reply = 0;
+			break;
 		default:
 			dump_msg("MM::unknown msg", &mm_msg);
 			assert(0);
