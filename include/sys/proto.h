@@ -121,6 +121,14 @@ PUBLIC  void	inform_int(int task_nr);
 /* lib/misc.c */
 PUBLIC void spin(char * func_name);
 
+/* lib/exit.c */
+PUBLIC void exit(int status);
+
+/* lib/fork */
+PUBLIC int fork();
+
+/* lib/wait.c */
+PUBLIC int wait(int *status);
 
 
 /* mm/main.c */

@@ -303,8 +303,8 @@ PUBLIC int sys_printx(int _unused1, int _unused2, char* s, struct proc* p_proc) 
 		if (ch == MAG_CH_PANIC || ch == MAG_CH_ASSERT)
 			continue;           /* skip the magic char */
 
-		// out_char(tty_table[p_proc->nr_tty].console, ch);
-        out_char(TTY_FIRST->console, ch);
+		out_char(tty_table[p_proc->nr_tty].console, ch);
+        // out_char(TTY_FIRST->console, ch);
     }
     return 0;
 }

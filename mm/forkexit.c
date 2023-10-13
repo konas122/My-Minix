@@ -46,7 +46,7 @@ PUBLIC int do_fork() {
 	*p = proc_table[pid];
 	p->ldt_sel = child_ldt_sel;
 	p->p_parent = pid;
-	sprintf(p->name, "%s_%d", proc_table[pid].name, child_pid);
+	// // sprintf(p->name, "%s_%d", proc_table[pid].name, child_pid);
 
     /* duplicate the process: T, D & S 
        为子进程分配内存，首先需要得到父进程的内存占用情况，这由读取LDT来完成。

@@ -86,7 +86,7 @@ struct part_ent {
 				 * nr of sectors in partition
 				 */
 
-} PARTITION_ENTRY;
+};
 
 
 /********************************************/

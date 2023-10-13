@@ -34,8 +34,8 @@ PUBLIC void task_mm() {
         switch (msgtype) {
 		case FORK:
 			mm_msg.RETVAL = do_fork();
-			break;
-		case EXIT:
+            break;
+        case EXIT:
 			do_exit(mm_msg.STATUS);
 			reply = 0;
 			break;

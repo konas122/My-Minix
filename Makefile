@@ -31,7 +31,7 @@ OBJS		= kernel/kernel.o lib/syscall.o kernel/start.o kernel/main.o\
 			lib/fork.o lib/exit.o lib/wait.o\
 			fs/main.o fs/open.o fs/misc.o fs/read_write.o fs/link.o\
 			mm/main.o mm/forkexit.o
-DASMOUTPUT	= kernel.bin.asm
+DASMOUTPUT	= kernel_bin.asm
 
 # All Phony Targets
 .PHONY : everything final image clean realclean disasm all buildimg

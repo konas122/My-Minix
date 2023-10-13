@@ -11,11 +11,8 @@
 #include "global.h"
 #include "proto.h"
 
-// // #include "hd.h"
-struct part_info {
-	u32	base;	/* # of start sector (NOT byte offset, but SECTOR) */
-	u32	size;	/* how many sectors in this partition (NOT byte size, but SECTOR number) */
-};
+#include "hd.h"
+
 
 PRIVATE void init_fs();
 PRIVATE void mkfs();

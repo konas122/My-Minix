@@ -30,7 +30,7 @@ typedef struct proc {
     int             ticks;              /* remained ticks */
     int             priority;
 
-    // u32				pid;			    /* process id passed in from MM */
+    u32				pid;			    /* process id passed in from MM */
 	char			name[16];		    /* name of the process */
 
     int  p_flags;                       /**
@@ -76,7 +76,7 @@ typedef struct proc {
                                          * 消息队列(链表)的next指针
                                          */
 
-    // int nr_tty;
+    int nr_tty;
     int p_parent;                       /**< pid of parent process */
 
 	int exit_status;                    /**< for parent */
