@@ -58,3 +58,6 @@ dkms.conf
 .idea/
 bochsout.txt
 kernel_bin.asm
+
+*.zip
+*.tar.gz

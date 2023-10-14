@@ -9,6 +9,7 @@
 #include "global.h"
 #include "keyboard.h"
 #include "proto.h"
+#include "stdio.h"
 
 
 PRIVATE char* i2a(int val, int base, char ** ps)
