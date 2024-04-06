@@ -57,10 +57,10 @@ debug : realclean everything clean buildimg
 	bochs -f bochsrc.gdb
 
 clean :
-	rm -f $(OBJS) krnl.map
+	rm -f $(OBJS) krnl.map *.lock
 
 realclean :
-	rm -f $(OBJS) $(KONIXBOOT) $(KONIXKERNEL) kernel.bin.stripped krnl.map
+	rm -f $(OBJS) $(KONIXBOOT) $(KONIXKERNEL) kernel.bin.stripped krnl.map *.lock
 
 disasm :
 	$(DASM) $(DASMFLAGS) $(KONIXKERNEL) > $(DASMOUTPUT)
