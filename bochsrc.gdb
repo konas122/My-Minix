@@ -28,3 +28,4 @@ mouse: enabled=0
 
 # enable key mapping, using US layout as default.
 keyboard:keymap=/usr/local/share/bochs/keymaps/x11-pc-us.map
+gdbstub: enabled=1, port=1234, text_base=0, data_base=0, bss_base=0

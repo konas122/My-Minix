@@ -54,13 +54,13 @@ debug : realclean everything clean buildimg
 	strip kernel.bin -o kernel.bin.stripped
 	sudo cp -fv kernel.bin.stripped /mnt/floppy/kernel.bin
 	sudo umount /mnt/floppy
-	bochs -f bochsrc
+	bochs -f bochsrc.gdb
 
 clean :
-	rm -f $(OBJS)
+	rm -f $(OBJS) krnl.map
 
 realclean :
-	rm -f $(OBJS) $(KONIXBOOT) $(KONIXKERNEL) kernel.bin.stripped
+	rm -f $(OBJS) $(KONIXBOOT) $(KONIXKERNEL) kernel.bin.stripped krnl.map
 
 disasm :
 	$(DASM) $(DASMFLAGS) $(KONIXKERNEL) > $(DASMOUTPUT)
