@@ -75,7 +75,7 @@ PUBLIC void task_fs() {
 		    send_recv(SEND, src, &fs_msg);
         }
         /**
-         *  FS在收到SUSPEND_PROC后，并不像处理完READ或WRITE消息后那样向进程P发送消息，
+         *   FS在收到SUSPEND_PROC后，并不像处理完READ或WRITE消息后那样向进程P发送消息，
          * 而是不理不睬，径自开始下一个消息处理的循环，留下P独自等待。一直到TTY发送
          * RESUME_PROC消息，FS才会通知P，让其继续运行。
         */
@@ -508,12 +508,12 @@ PUBLIC void sync_inode(struct inode * p) {
 }
 
 /**
- *  如果一个inode已经被读入inode_table[]这个缓冲区，那么下一次再需要它时，
+ *   如果一个inode已经被读入inode_table[]这个缓冲区，那么下一次再需要它时，
  * 就不用再进行一次磁盘I/O，直接从缓冲区读出来就可以了。
- *  这里我们使用了比较较原始的策略来保持磁盘和缓冲区的一致性：一旦内存中的值发生变化，
+ *   这里我们使用了比较较原始的策略来保持磁盘和缓冲区的一致性：一旦内存中的值发生变化，
  * 则立即写入磁盘 —— 这由`sync_inode()`来完成。
  * 
- *  对于缓冲区的管理是这样的：如果一个inode的in_cnt为0，那么被认为是未使用，
+ *   对于缓冲区的管理是这样的：如果一个inode的in_cnt为0，那么被认为是未使用，
  * 于是可以分配给新读入的i-node。一旦一个i-node读入，那么i_cnt自增。当i-node用完之后，
  * 使用者应调用一个`put_inode()`，这样i_cnt自减。当i-node自减至零时，说明不再有人继续使用
  * 这个i-node，它就变成一个空项了。

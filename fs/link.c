@@ -54,7 +54,7 @@ PUBLIC int do_unlink() {
 
 	struct inode * pin = get_inode(dir_inode->i_dev, inode_nr);
     /**
-     *  此处调用`get_inode()`后，要记得在使用完pin后调用`put_inode()`来释放i_cnt，
+     *   此处调用`get_inode()`后，要记得在使用完pin后调用`put_inode()`来释放i_cnt，
      * 不然inode_table[]中的像影响就永远不会被覆盖，这会导致内存泄漏。
     */
 

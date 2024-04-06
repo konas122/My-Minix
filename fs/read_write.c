@@ -21,7 +21,7 @@
  * Sector map is not needed to update, since the sectors for the file have been
  * allocated and the bits are set when the file was created.
  * 
- *  主要功能是读取或写入文件，并返回已读/写的字节数。这个函数不需要更新扇区映射，
+ *   主要功能是读取或写入文件，并返回已读/写的字节数。这个函数不需要更新扇区映射，
  * 因为文件的扇区在创建文件时已经分配，并且位已经设置。
  * 
  * @return How many bytes have been read/written.

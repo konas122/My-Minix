@@ -3,7 +3,10 @@
 file kernel.bin
 target remote localhost:1234
 set disassembly-flavor intel
+
+b kernel/start.c:15
 b kernel/main.c:64
+c
 
 define lsproc
     set $count = 16

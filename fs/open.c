@@ -121,18 +121,18 @@ PUBLIC int do_open() {
     return fd;
 }
 /**
- *  `open()`要返回的是进程表`filp[]`内的一个索引，所以一开始我们就在`filp[]`内寻找一个空项，
+ *   `open()`要返回的是进程表`filp[]`内的一个索引，所以一开始我们就在`filp[]`内寻找一个空项，
  * 用来存放即将打开的文件的fd。由于filp[]内只保存指针，所以我们还要从`f_desc_table[]`中找一个空项。
  * 
- *  这两项工作完成后，就调用`search_file()`来查看打开的文件是否已存在。
- *  若不存在，则调用`create_file()`。
+ *   这两项工作完成后，就调用`search_file()`来查看打开的文件是否已存在。
+ *   若不存在，则调用`create_file()`。
  * 
- *  在`do_open()`中，调用`create_file()`之后文件其实已经创建完毕了，
+ *   在`do_open()`中，调用`create_file()`之后文件其实已经创建完毕了，
  * 之所以函数还没立刻结束，是因为创建完后还要进行“打开”操作。
- *  上面代码中的`if(pin)`条件判断成立后，紧跟着就是连接进程表、`f_desc_table[]`和`inode_table[]`。
+ *   上面代码中的`if(pin)`条件判断成立后，紧跟着就是连接进程表、`f_desc_table[]`和`inode_table[]`。
  * 这三步完成后，文件就能认为是被打开了。
  *  
- *  接着就是对文件属性进行判断，如果是字符设备特殊文件，就交给相应的驱动程序（这由文件的设备号决定）。
+ *   接着就是对文件属性进行判断，如果是字符设备特殊文件，就交给相应的驱动程序（这由文件的设备号决定）。
 */
 
 
@@ -348,12 +348,12 @@ PRIVATE int alloc_smap_bit(int dev, int nr_sects_to_alloc) {
     return free_sect_nr;
 }
 /**
- *  `alloc_imap_bit()`和`alloc_smap_bit()`都是对位图的操作，代码比较相似。
+ *   `alloc_imap_bit()`和`alloc_smap_bit()`都是对位图的操作，代码比较相似。
  * 
- *  在`sector-map`中分配扇区时，我们没考虑太多别的情况。换句话说，我们一旦找到一个未使用的扇区，
+ *   在`sector-map`中分配扇区时，我们没考虑太多别的情况。换句话说，我们一旦找到一个未使用的扇区，
  * 就认为以它为开头存在连续`nr_sects_to_alloc`个扇区。（所以这代码乍一看感觉挺不合逻辑的）
  * 
- *  这种假设是有道理的，一方面，参数`nr_sects_to_alloc`应该始终为`NR_DEFAULT_FILE_SECTS`或者它的倍数；
+ *   这种假设是有道理的，一方面，参数`nr_sects_to_alloc`应该始终为`NR_DEFAULT_FILE_SECTS`或者它的倍数；
  * 另一方面，只要我们每次都这样分配磁盘，那么理论上，除非遍历到一块磁盘的结尾处，我们不会遇到一处小于
  * `NR_DEFAULT_FILE_SECTS`的连续扇区。
 */

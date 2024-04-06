@@ -126,11 +126,11 @@ PUBLIC int strip_path(char *filename, const char *pathname, struct inode **ppino
     return 0;
 }
 /**
- *  该函数调用成功后，filename里面将包含“纯文件名”，即不包含路径的文件名，
+ *   该函数调用成功后，filename里面将包含“纯文件名”，即不包含路径的文件名，
  * dir_node这个inode指针将指向文件所在文件夹的i-node。
  * 
- *  总而言之，`strip_path()`的主要作用便是定位直接包含给定文件的文件夹，
+ *   总而言之，`strip_path()`的主要作用便是定位直接包含给定文件的文件夹，
  * 并得到给定文件在此文件夹中的名称。
- *  由于当前我们的文件系统是扁平的，所以这个函数返回之后，`dir_inode`指向的
+ *   由于当前我们的文件系统是扁平的，所以这个函数返回之后，`dir_inode`指向的
  * 将永远是根目录“/”的i-node。
 */
