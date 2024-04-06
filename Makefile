@@ -46,11 +46,21 @@ all : realclean everything
 
 image : realclean everything clean buildimg
 
+debug : CFLAGS += -g
+debug : realclean everything clean buildimg
+	dd if=boot/boot.bin of=a.img bs=512 count=1 conv=notrunc
+	sudo mount -o loop a.img /mnt/floppy/
+	sudo cp -fv boot/loader.bin /mnt/floppy/
+	strip kernel.bin -o kernel.bin.stripped
+	sudo cp -fv kernel.bin.stripped /mnt/floppy/kernel.bin
+	sudo umount /mnt/floppy
+	bochs -f bochsrc
+
 clean :
 	rm -f $(OBJS)
 
 realclean :
-	rm -f $(OBJS) $(KONIXBOOT) $(KONIXKERNEL)
+	rm -f $(OBJS) $(KONIXBOOT) $(KONIXKERNEL) kernel.bin.stripped
 
 disasm :
 	$(DASM) $(DASMFLAGS) $(KONIXKERNEL) > $(DASMOUTPUT)

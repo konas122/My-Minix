@@ -52,7 +52,8 @@ Mkfile.old
 dkms.conf
 
 *.img
-*.bin
+*.bin*
+*.lock
 .vscode/
 .vs/
 .idea/
