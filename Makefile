@@ -47,7 +47,7 @@ all : realclean everything
 image : realclean everything clean buildimg
 
 debug : CFLAGS += -g
-debug : realclean everything clean buildimg
+debug : realclean everything clean
 	dd if=boot/boot.bin of=a.img bs=512 count=1 conv=notrunc
 	sudo mount -o loop a.img /mnt/floppy/
 	sudo cp -fv boot/loader.bin /mnt/floppy/

@@ -14,11 +14,27 @@ Bochs x86 Emulator 2.6.8
 ## Make
 
 ```shell
-make image
+$ make image
 ```
 
 ## Run
 
 ```shell
-bochs -f bochsrc
+$ bochs -f bochsrc
+```
+
+## Debug
+
+Run this command in first shell.
+
+```shell
+$ make debug
+```
+
+Then open a new shell and run the command below.
+
+```shell
+$ gdb
+# ...
+(gdb) source .gdbinit
 ```
