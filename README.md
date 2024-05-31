@@ -25,7 +25,7 @@ $ bochs -f bochsrc
 
 ## Debug
 
-Run this command in first shell.
+Run this command in first shell. Then choose [6] to begin the simulation.
 
 ```shell
 $ make debug
@@ -34,7 +34,5 @@ $ make debug
 Then open a new shell and run the command below.
 
 ```shell
-$ gdb
-# ...
-(gdb) source .gdbinit
+$ gdb -x gdbinit
 ```
